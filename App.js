@@ -1,8 +1,9 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { supabase } from './lib/supabase';
 import { useEffect, useState } from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import LoginScreen from './screens/LoginScreen';
+import HomeScreen from './screens/HomeScreen';
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -25,52 +26,17 @@ export default function App() {
 
   if (!session) {
     return (
-      <>
+      <SafeAreaProvider>
         <LoginScreen />
         <StatusBar style="light" />
-      </>
+      </SafeAreaProvider>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Chào mừng!</Text>
-      <Text style={styles.email}>{session.user.email}</Text>
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutText}>Đăng xuất</Text>
-      </TouchableOpacity>
-      <StatusBar style="auto" />
-    </View>
+    <SafeAreaProvider>
+      <HomeScreen onLogout={handleLogout} />
+      <StatusBar style="light" />
+    </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  email: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 30,
-  },
-  logoutButton: {
-    backgroundColor: '#000',
-    paddingHorizontal: 30,
-    paddingVertical: 12,
-    borderRadius: 25,
-  },
-  logoutText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-});
