@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,12 +13,14 @@ import {
   Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useTheme } from '../contexts/ThemeContext';
 import { createStyles } from '../styles/homeStyles';
 import CreatePostScreen from './CreatePostScreen';
 import ReplyScreen from './ReplyScreen';
 import QuotePostScreen from './QuotePostScreen';
+import ProfileScreen from './ProfileScreen';
 
 export default function HomeScreen({ onLogout }) {
   const { theme, isDarkMode, toggleTheme } = useTheme();
@@ -34,6 +36,7 @@ export default function HomeScreen({ onLogout }) {
   const [showRepostMenu, setShowRepostMenu] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
   const [likedPosts, setLikedPosts] = useState(new Set());
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   useEffect(() => {
     fetchUserProfile();
@@ -482,24 +485,47 @@ export default function HomeScreen({ onLogout }) {
         </TouchableOpacity>
       </Modal>
 
+      <Modal
+        visible={showProfileModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowProfileModal(false)}
+      >
+        <ProfileScreen
+          navigation={{ goBack: () => setShowProfileModal(false) }}
+          onLogout={() => {
+            setShowProfileModal(false);
+            onLogout();
+          }}
+        />
+      </Modal>
+
       <View style={styles.bottomNav}>
         <TouchableOpacity style={styles.navItem}>
-          <Text style={styles.navIconActive}>🏠</Text>
+          <Ionicons name="home" size={24} color={theme.primary} />
           <Text style={styles.navTextActive}>Trang chủ</Text>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.navItem}>
-          <Text style={styles.navIcon}>🔍</Text>
+          <Ionicons name="search-outline" size={24} color={theme.iconColor} style={{ opacity: 0.6 }} />
           <Text style={styles.navText}>Tìm kiếm</Text>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.navItem}>
-          <Text style={styles.navIcon}>🔔</Text>
-          <Text style={styles.navText}>Thông báo</Text>
+          <Ionicons name="mail-outline" size={24} color={theme.iconColor} style={{ opacity: 0.6 }} />
+          <Text style={styles.navText}>Tin nhắn</Text>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.navItem}>
-          <Text style={styles.navIcon}>👤</Text>
+          <Ionicons name="notifications-outline" size={24} color={theme.iconColor} style={{ opacity: 0.6 }} />
+          <Text style={styles.navText}>Thông báo</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => setShowProfileModal(true)}
+        >
+          <Ionicons name="person-outline" size={24} color={theme.iconColor} style={{ opacity: 0.6 }} />
           <Text style={styles.navText}>Hồ sơ</Text>
         </TouchableOpacity>
       </View>

@@ -169,6 +169,7 @@ export const createStyles = (theme) => StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     paddingVertical: 4,
+    gap: 2,
   },
   navIcon: {
     fontSize: 24,
