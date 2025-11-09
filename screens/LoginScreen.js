@@ -9,10 +9,13 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Modal,
 } from 'react-native';
 import { supabase } from '../lib/supabase';
+import SignupScreen from './SignupScreen';
 
 export default function LoginScreen() {
+  const [showSignup, setShowSignup] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -93,7 +96,20 @@ export default function LoginScreen() {
         <TouchableOpacity>
           <Text style={styles.forgotPassword}>Quên mật khẩu?</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => setShowSignup(true)}>
+          <Text style={styles.signupLink}>Chưa có tài khoản? Đăng ký</Text>
+        </TouchableOpacity>
       </View>
+
+      <Modal
+        visible={showSignup}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowSignup(false)}
+      >
+        <SignupScreen navigation={{ goBack: () => setShowSignup(false) }} />
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -162,5 +178,12 @@ const styles = StyleSheet.create({
     color: '#1d9bf0',
     textAlign: 'center',
     fontSize: 14,
+  },
+  signupLink: {
+    color: '#1d9bf0',
+    textAlign: 'center',
+    marginTop: 15,
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

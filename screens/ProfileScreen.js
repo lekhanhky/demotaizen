@@ -8,17 +8,20 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useTheme } from '../contexts/ThemeContext';
+import EditProfileScreen from './EditProfileScreen';
 
 export default function ProfileScreen({ navigation, onLogout }) {
   const { theme } = useTheme();
   const [userProfile, setUserProfile] = useState(null);
   const [userPosts, setUserPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [stats, setStats] = useState({
     postsCount: 0,
     followersCount: 0,
@@ -94,6 +97,12 @@ export default function ProfileScreen({ navigation, onLogout }) {
     );
   };
 
+  const handleProfileUpdated = () => {
+    setShowEditModal(false);
+    fetchUserProfile();
+    fetchUserPosts();
+  };
+
   const formatTime = (timestamp) => {
     const date = new Date(timestamp);
     return date.toLocaleDateString('vi-VN', { 
@@ -141,7 +150,10 @@ export default function ProfileScreen({ navigation, onLogout }) {
             style={styles.avatar}
           />
           
-          <TouchableOpacity style={[styles.editButton, { borderColor: theme.border }]}>
+          <TouchableOpacity 
+            style={[styles.editButton, { borderColor: theme.border }]}
+            onPress={() => setShowEditModal(true)}
+          >
             <Text style={[styles.editButtonText, { color: theme.text }]}>Chỉnh sửa hồ sơ</Text>
           </TouchableOpacity>
 
@@ -239,6 +251,18 @@ export default function ProfileScreen({ navigation, onLogout }) {
           )}
         </View>
       </ScrollView>
+
+      <Modal
+        visible={showEditModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowEditModal(false)}
+      >
+        <EditProfileScreen
+          navigation={{ goBack: () => setShowEditModal(false) }}
+          onProfileUpdated={handleProfileUpdated}
+        />
+      </Modal>
     </SafeAreaView>
   );
 }
