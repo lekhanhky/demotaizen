@@ -10,14 +10,19 @@ import {
   ActivityIndicator,
   Modal,
   Alert,
+  Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../lib/supabase';
+import { useTheme } from '../contexts/ThemeContext';
+import { createStyles } from '../styles/homeStyles';
 import CreatePostScreen from './CreatePostScreen';
 import ReplyScreen from './ReplyScreen';
 import QuotePostScreen from './QuotePostScreen';
 
 export default function HomeScreen({ onLogout }) {
+  const { theme, isDarkMode, toggleTheme } = useTheme();
+  const styles = createStyles(theme);
   const [activeTab, setActiveTab] = useState('forYou');
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -154,6 +159,37 @@ export default function HomeScreen({ onLogout }) {
     }
   };
 
+  const handleSharePress = async (post) => {
+    try {
+      const shareMessage = `${post.content}\n\n- ${post.display_name} (@${post.username})`;
+      
+      const result = await Share.share({
+        message: shareMessage,
+        title: 'Chia sẻ bài viết',
+      });
+
+      if (result.action === Share.sharedAction) {
+        if (result.activityType) {
+          // Shared with activity type
+          console.log('Shared with activity type:', result.activityType);
+        } else {
+          // Shared
+          console.log('Post shared successfully');
+        }
+      } else if (result.action === Share.dismissedAction) {
+        // Dismissed
+        console.log('Share dismissed');
+      }
+    } catch (error) {
+      console.error('Error sharing post:', error);
+      Alert.alert('Lỗi', 'Không thể chia sẻ bài viết.');
+    }
+  };
+
+  const handleToggleTheme = () => {
+    toggleTheme();
+  };
+
   const handleSimpleRepost = async () => {
     setShowRepostMenu(false);
     try {
@@ -274,7 +310,10 @@ export default function HomeScreen({ onLogout }) {
             </Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => handleSharePress(item)}
+          >
             <Text style={styles.actionIcon}>📤</Text>
           </TouchableOpacity>
         </View>
@@ -293,8 +332,8 @@ export default function HomeScreen({ onLogout }) {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={[styles.header, { backgroundColor: theme.headerBackground, borderBottomColor: theme.border }]}>
         <TouchableOpacity onPress={onLogout}>
           <Image
             source={{ uri: userProfile?.avatar_url || 'https://i.pravatar.cc/150?img=3' }}
@@ -304,8 +343,8 @@ export default function HomeScreen({ onLogout }) {
         
         <Text style={styles.headerTitle}>X Clone</Text>
         
-        <TouchableOpacity>
-          <Text style={styles.headerIcon}>✈️</Text>
+        <TouchableOpacity onPress={toggleTheme}>
+          <Text style={styles.headerIcon}>{isDarkMode ? '☀️' : '🌙'}</Text>
         </TouchableOpacity>
       </View>
 
@@ -467,238 +506,3 @@ export default function HomeScreen({ onLogout }) {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#15202b',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#38444d',
-  },
-  headerAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  headerIcon: {
-    fontSize: 24,
-  },
-  tabs: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#38444d',
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  activeTab: {
-    borderBottomWidth: 3,
-    borderBottomColor: '#1d9bf0',
-  },
-  tabText: {
-    color: '#8899a6',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  activeTabText: {
-    color: '#fff',
-  },
-  feed: {
-    flex: 1,
-  },
-  post: {
-    flexDirection: 'row',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#38444d',
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    marginRight: 12,
-  },
-  postContent: {
-    flex: 1,
-  },
-  postHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  authorName: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 15,
-  },
-  username: {
-    color: '#8899a6',
-    fontSize: 15,
-  },
-  time: {
-    color: '#8899a6',
-    fontSize: 15,
-  },
-  content: {
-    color: '#fff',
-    fontSize: 15,
-    lineHeight: 20,
-    marginBottom: 12,
-  },
-  postImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: 16,
-    marginBottom: 12,
-  },
-  actions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    marginTop: 8,
-    gap: 40,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minWidth: 50,
-  },
-  iconContainer: {
-    minWidth: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionIcon: {
-    fontSize: 18,
-    marginRight: 8,
-  },
-  actionText: {
-    color: '#8899a6',
-    fontSize: 13,
-  },
-  unlikedIcon: {
-    color: '#8899a6',
-    fontSize: 20,
-  },
-  likedIcon: {
-    transform: [{ scale: 1.1 }],
-  },
-  likedText: {
-    color: '#f91880',
-    fontWeight: '600',
-  },
-  fab: {
-    position: 'absolute',
-    right: 20,
-    bottom: 80,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#1d9bf0',
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-  },
-  fabIcon: {
-    fontSize: 32,
-    color: '#fff',
-    fontWeight: '300',
-  },
-  bottomNav: {
-    flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: '#38444d',
-    paddingVertical: 8,
-  },
-  navItem: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 4,
-  },
-  navIcon: {
-    fontSize: 24,
-    marginBottom: 2,
-    opacity: 0.6,
-  },
-  navIconActive: {
-    fontSize: 24,
-    marginBottom: 2,
-  },
-  navText: {
-    color: '#8899a6',
-    fontSize: 11,
-  },
-  navTextActive: {
-    color: '#1d9bf0',
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyContainer: {
-    padding: 40,
-    alignItems: 'center',
-  },
-  emptyText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  emptySubtext: {
-    color: '#8899a6',
-    fontSize: 14,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  repostMenu: {
-    backgroundColor: '#15202b',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#38444d',
-    minWidth: 200,
-    overflow: 'hidden',
-  },
-  repostMenuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-  },
-  repostMenuIcon: {
-    fontSize: 20,
-    marginRight: 12,
-  },
-  repostMenuText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  repostMenuDivider: {
-    height: 1,
-    backgroundColor: '#38444d',
-  },
-});

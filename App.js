@@ -2,6 +2,7 @@ import { StatusBar } from 'expo-status-bar';
 import { supabase } from './lib/supabase';
 import { useEffect, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { ThemeProvider } from './contexts/ThemeContext';
 import LoginScreen from './screens/LoginScreen';
 import HomeScreen from './screens/HomeScreen';
 
@@ -26,17 +27,21 @@ export default function App() {
 
   if (!session) {
     return (
-      <SafeAreaProvider>
-        <LoginScreen />
-        <StatusBar style="light" />
-      </SafeAreaProvider>
+      <ThemeProvider>
+        <SafeAreaProvider>
+          <LoginScreen />
+          <StatusBar style="light" />
+        </SafeAreaProvider>
+      </ThemeProvider>
     );
   }
 
   return (
-    <SafeAreaProvider>
-      <HomeScreen onLogout={handleLogout} />
-      <StatusBar style="light" />
-    </SafeAreaProvider>
+    <ThemeProvider>
+      <SafeAreaProvider>
+        <HomeScreen onLogout={handleLogout} />
+        <StatusBar style="auto" />
+      </SafeAreaProvider>
+    </ThemeProvider>
   );
 }
