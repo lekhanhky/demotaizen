@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,68 +6,112 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
+  RefreshControl,
+  ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-const MOCK_POSTS = [
-  {
-    id: '1',
-    author: 'Jane Doe',
-    username: '@janedoe',
-    time: '2 giờ',
-    content: 'Khám phá vẻ đẹp tiềm ẩn của thành phố về đêm. Ánh đèn neon, những con đường vắng và một câu chuyện chưa kể.',
-    image: 'https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=800',
-    avatar: 'https://i.pravatar.cc/150?img=1',
-    comments: 123,
-    retweets: 45,
-    likes: 678,
-  },
-  {
-    id: '2',
-    author: 'John Smith',
-    username: '@johnsmith',
-    time: '5 giờ',
-    content: 'Đây là một bài đăng khác không có hình ảnh, chỉ có văn bản để thể hiện sự đa dạng của nội dung. Một ý tưởng bất chợt cho ngày mới!',
-    avatar: 'https://i.pravatar.cc/150?img=2',
-    comments: 32,
-    retweets: 11,
-    likes: 150,
-  },
-];
+import { supabase } from '../lib/supabase';
+import CreatePostScreen from './CreatePostScreen';
 
 export default function HomeScreen({ onLogout }) {
   const [activeTab, setActiveTab] = useState('forYou');
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
+  const [showCreatePost, setShowCreatePost] = useState(false);
+
+  useEffect(() => {
+    fetchUserProfile();
+    fetchPosts();
+  }, []);
+
+  const fetchUserProfile = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      setUserProfile(data);
+    }
+  };
+
+  const fetchPosts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('posts_with_details')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setPosts(data || []);
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchPosts();
+  };
+
+  const handlePostCreated = () => {
+    setShowCreatePost(false);
+    fetchPosts();
+  };
+
+  const formatTime = (timestamp) => {
+    const now = new Date();
+    const postTime = new Date(timestamp);
+    const diffMs = now - postTime;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 60) return `${diffMins} phút`;
+    if (diffHours < 24) return `${diffHours} giờ`;
+    return `${diffDays} ngày`;
+  };
 
   const renderPost = ({ item }) => (
     <View style={styles.post}>
-      <Image source={{ uri: item.avatar }} style={styles.avatar} />
+      <Image 
+        source={{ uri: item.avatar_url || 'https://i.pravatar.cc/150?u=' + item.user_id }} 
+        style={styles.avatar} 
+      />
       <View style={styles.postContent}>
         <View style={styles.postHeader}>
-          <Text style={styles.authorName}>{item.author}</Text>
-          <Text style={styles.username}> {item.username}</Text>
-          <Text style={styles.time}> • {item.time}</Text>
+          <Text style={styles.authorName}>{item.display_name || 'User'}</Text>
+          <Text style={styles.username}> @{item.username || 'user'}</Text>
+          <Text style={styles.time}> • {formatTime(item.created_at)}</Text>
         </View>
         
         <Text style={styles.content}>{item.content}</Text>
         
-        {item.image && (
-          <Image source={{ uri: item.image }} style={styles.postImage} />
+        {item.image_url && (
+          <Image source={{ uri: item.image_url }} style={styles.postImage} />
         )}
         
         <View style={styles.actions}>
           <TouchableOpacity style={styles.actionButton}>
             <Text style={styles.actionIcon}>💬</Text>
-            <Text style={styles.actionText}>{item.comments}</Text>
+            <Text style={styles.actionText}>{item.comments_count || 0}</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.actionButton}>
             <Text style={styles.actionIcon}>🔄</Text>
-            <Text style={styles.actionText}>{item.retweets}</Text>
+            <Text style={styles.actionText}>{item.retweets_count || 0}</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.actionButton}>
             <Text style={styles.actionIcon}>❤️</Text>
-            <Text style={styles.actionText}>{item.likes}</Text>
+            <Text style={styles.actionText}>{item.likes_count || 0}</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.actionButton}>
@@ -78,12 +122,22 @@ export default function HomeScreen({ onLogout }) {
     </View>
   );
 
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#1d9bf0" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={onLogout}>
           <Image
-            source={{ uri: 'https://i.pravatar.cc/150?img=3' }}
+            source={{ uri: userProfile?.avatar_url || 'https://i.pravatar.cc/150?img=3' }}
             style={styles.headerAvatar}
           />
         </TouchableOpacity>
@@ -116,15 +170,43 @@ export default function HomeScreen({ onLogout }) {
       </View>
 
       <FlatList
-        data={MOCK_POSTS}
+        data={posts}
         renderItem={renderPost}
         keyExtractor={(item) => item.id}
         style={styles.feed}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#1d9bf0"
+          />
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>Chưa có bài đăng nào</Text>
+            <Text style={styles.emptySubtext}>Hãy tạo bài đăng đầu tiên!</Text>
+          </View>
+        }
       />
 
-      <TouchableOpacity style={styles.fab}>
+      <TouchableOpacity 
+        style={styles.fab}
+        onPress={() => setShowCreatePost(true)}
+      >
         <Text style={styles.fabIcon}>+</Text>
       </TouchableOpacity>
+
+      <Modal
+        visible={showCreatePost}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowCreatePost(false)}
+      >
+        <CreatePostScreen
+          navigation={{ goBack: () => setShowCreatePost(false) }}
+          onPostCreated={handlePostCreated}
+        />
+      </Modal>
 
       <View style={styles.bottomNav}>
         <TouchableOpacity style={styles.navItem}>
@@ -314,5 +396,24 @@ const styles = StyleSheet.create({
     color: '#1d9bf0',
     fontSize: 11,
     fontWeight: '600',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    color: '#8899a6',
+    fontSize: 14,
   },
 });
