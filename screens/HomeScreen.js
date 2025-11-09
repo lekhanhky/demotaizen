@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../lib/supabase';
 import CreatePostScreen from './CreatePostScreen';
+import ReplyScreen from './ReplyScreen';
 
 export default function HomeScreen({ onLogout }) {
   const [activeTab, setActiveTab] = useState('forYou');
@@ -21,6 +22,8 @@ export default function HomeScreen({ onLogout }) {
   const [refreshing, setRefreshing] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
   const [showCreatePost, setShowCreatePost] = useState(false);
+  const [showReplyModal, setShowReplyModal] = useState(false);
+  const [selectedPost, setSelectedPost] = useState(null);
 
   useEffect(() => {
     fetchUserProfile();
@@ -66,6 +69,17 @@ export default function HomeScreen({ onLogout }) {
     fetchPosts();
   };
 
+  const handleReplyPress = (post) => {
+    setSelectedPost(post);
+    setShowReplyModal(true);
+  };
+
+  const handleReplyCreated = () => {
+    setShowReplyModal(false);
+    setSelectedPost(null);
+    fetchPosts();
+  };
+
   const formatTime = (timestamp) => {
     const now = new Date();
     const postTime = new Date(timestamp);
@@ -99,7 +113,10 @@ export default function HomeScreen({ onLogout }) {
         )}
         
         <View style={styles.actions}>
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => handleReplyPress(item)}
+          >
             <Text style={styles.actionIcon}>💬</Text>
             <Text style={styles.actionText}>{item.comments_count || 0}</Text>
           </TouchableOpacity>
@@ -206,6 +223,24 @@ export default function HomeScreen({ onLogout }) {
           navigation={{ goBack: () => setShowCreatePost(false) }}
           onPostCreated={handlePostCreated}
         />
+      </Modal>
+
+      <Modal
+        visible={showReplyModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => {
+          setShowReplyModal(false);
+          setSelectedPost(null);
+        }}
+      >
+        {selectedPost && (
+          <ReplyScreen
+            navigation={{ goBack: () => setShowReplyModal(false) }}
+            route={{ post: selectedPost }}
+            onReplyCreated={handleReplyCreated}
+          />
+        )}
       </Modal>
 
       <View style={styles.bottomNav}>
