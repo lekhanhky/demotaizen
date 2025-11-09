@@ -21,6 +21,9 @@ import CreatePostScreen from './CreatePostScreen';
 import ReplyScreen from './ReplyScreen';
 import QuotePostScreen from './QuotePostScreen';
 import ProfileScreen from './ProfileScreen';
+import MessagesScreen from './MessagesScreen';
+import ChatScreen from './ChatScreen';
+import NewMessageScreen from './NewMessageScreen';
 
 export default function HomeScreen({ onLogout }) {
   const { theme, isDarkMode, toggleTheme } = useTheme();
@@ -37,12 +40,11 @@ export default function HomeScreen({ onLogout }) {
   const [selectedPost, setSelectedPost] = useState(null);
   const [likedPosts, setLikedPosts] = useState(new Set());
   const [showProfileModal, setShowProfileModal] = useState(false);
-
-  useEffect(() => {
-    fetchUserProfile();
-    fetchPosts();
-    fetchLikedPosts();
-  }, []);
+  const [showMessagesModal, setShowMessagesModal] = useState(false);
+  const [showChatModal, setShowChatModal] = useState(false);
+  const [showNewMessageModal, setShowNewMessageModal] = useState(false);
+  const [chatParams, setChatParams] = useState(null);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
 
   const fetchUserProfile = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -91,6 +93,45 @@ export default function HomeScreen({ onLogout }) {
       console.error('Error fetching liked posts:', error);
     }
   };
+
+  const fetchUnreadMessagesCount = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('conversations_with_details')
+        .select('unread_count')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      
+      const totalUnread = data?.reduce((sum, conv) => sum + (conv.unread_count || 0), 0) || 0;
+      setUnreadMessagesCount(totalUnread);
+    } catch (error) {
+      console.error('Error fetching unread messages:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchUserProfile();
+    fetchPosts();
+    fetchLikedPosts();
+    fetchUnreadMessagesCount();
+
+    // Subscribe to new messages
+    const subscription = supabase
+      .channel('messages_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'messages' },
+        () => fetchUnreadMessagesCount()
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -242,6 +283,18 @@ export default function HomeScreen({ onLogout }) {
     setShowQuoteModal(false);
     setSelectedPost(null);
     fetchPosts();
+  };
+
+  const handleOpenChat = (conversationId, otherUser) => {
+    setChatParams({ conversationId, otherUser });
+    setShowMessagesModal(false);
+    setShowNewMessageModal(false);
+    setShowChatModal(true);
+  };
+
+  const handleOpenNewMessage = () => {
+    setShowMessagesModal(false);
+    setShowNewMessageModal(true);
   };
 
   const formatTime = (timestamp) => {
@@ -500,6 +553,59 @@ export default function HomeScreen({ onLogout }) {
         />
       </Modal>
 
+      <Modal
+        visible={showMessagesModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowMessagesModal(false)}
+      >
+        <MessagesScreen
+          navigation={{ goBack: () => setShowMessagesModal(false) }}
+          onOpenChat={handleOpenChat}
+          onOpenNewMessage={handleOpenNewMessage}
+        />
+      </Modal>
+
+      <Modal
+        visible={showChatModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => {
+          setShowChatModal(false);
+          setChatParams(null);
+        }}
+      >
+        {chatParams && (
+          <ChatScreen
+            navigation={{ 
+              goBack: () => {
+                setShowChatModal(false);
+                setChatParams(null);
+                setShowMessagesModal(true);
+              }
+            }}
+            route={{ params: chatParams }}
+          />
+        )}
+      </Modal>
+
+      <Modal
+        visible={showNewMessageModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowNewMessageModal(false)}
+      >
+        <NewMessageScreen
+          navigation={{ 
+            goBack: () => {
+              setShowNewMessageModal(false);
+              setShowMessagesModal(true);
+            }
+          }}
+          onStartChat={handleOpenChat}
+        />
+      </Modal>
+
       <View style={styles.bottomNav}>
         <TouchableOpacity style={styles.navItem}>
           <Ionicons name="home" size={24} color={theme.primary} />
@@ -511,8 +617,20 @@ export default function HomeScreen({ onLogout }) {
           <Text style={styles.navText}>Tìm kiếm</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="mail-outline" size={24} color={theme.iconColor} style={{ opacity: 0.6 }} />
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => setShowMessagesModal(true)}
+        >
+          <View style={styles.iconWithBadge}>
+            <Ionicons name="mail-outline" size={24} color={theme.iconColor} style={{ opacity: 0.6 }} />
+            {unreadMessagesCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>
+                  {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
+                </Text>
+              </View>
+            )}
+          </View>
           <Text style={styles.navText}>Tin nhắn</Text>
         </TouchableOpacity>
         

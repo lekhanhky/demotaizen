@@ -189,6 +189,28 @@ export const createStyles = (theme) => StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
   },
+  iconWithBadge: {
+    position: 'relative',
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -8,
+    backgroundColor: theme.primary,
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 2,
+    borderColor: theme.headerBackground,
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
