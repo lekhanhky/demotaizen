@@ -9,11 +9,13 @@ import {
   RefreshControl,
   ActivityIndicator,
   Modal,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../lib/supabase';
 import CreatePostScreen from './CreatePostScreen';
 import ReplyScreen from './ReplyScreen';
+import QuotePostScreen from './QuotePostScreen';
 
 export default function HomeScreen({ onLogout }) {
   const [activeTab, setActiveTab] = useState('forYou');
@@ -23,11 +25,15 @@ export default function HomeScreen({ onLogout }) {
   const [userProfile, setUserProfile] = useState(null);
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [showReplyModal, setShowReplyModal] = useState(false);
+  const [showQuoteModal, setShowQuoteModal] = useState(false);
+  const [showRepostMenu, setShowRepostMenu] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
+  const [likedPosts, setLikedPosts] = useState(new Set());
 
   useEffect(() => {
     fetchUserProfile();
     fetchPosts();
+    fetchLikedPosts();
   }, []);
 
   const fetchUserProfile = async () => {
@@ -59,6 +65,25 @@ export default function HomeScreen({ onLogout }) {
     }
   };
 
+  const fetchLikedPosts = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('likes')
+        .select('post_id')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      
+      const likedPostIds = new Set(data.map(like => like.post_id));
+      setLikedPosts(likedPostIds);
+    } catch (error) {
+      console.error('Error fetching liked posts:', error);
+    }
+  };
+
   const onRefresh = () => {
     setRefreshing(true);
     fetchPosts();
@@ -76,6 +101,106 @@ export default function HomeScreen({ onLogout }) {
 
   const handleReplyCreated = () => {
     setShowReplyModal(false);
+    setSelectedPost(null);
+    fetchPosts();
+  };
+
+  const handleRepostPress = (post) => {
+    setSelectedPost(post);
+    setShowRepostMenu(true);
+  };
+
+  const handleLikePress = async (post) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const isLiked = likedPosts.has(post.id);
+
+      if (isLiked) {
+        // Unlike
+        await supabase
+          .from('likes')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('post_id', post.id);
+
+        setLikedPosts(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(post.id);
+          return newSet;
+        });
+      } else {
+        // Like
+        await supabase
+          .from('likes')
+          .insert({
+            user_id: user.id,
+            post_id: post.id,
+          });
+
+        setLikedPosts(prev => new Set(prev).add(post.id));
+      }
+
+      // Update post count immediately
+      setPosts(prevPosts => 
+        prevPosts.map(p => 
+          p.id === post.id 
+            ? { ...p, likes_count: isLiked ? p.likes_count - 1 : p.likes_count + 1 }
+            : p
+        )
+      );
+    } catch (error) {
+      console.error('Error toggling like:', error);
+      Alert.alert('Lỗi', 'Không thể like bài viết. Vui lòng thử lại.');
+    }
+  };
+
+  const handleSimpleRepost = async () => {
+    setShowRepostMenu(false);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Check if already reposted
+      const { data: existing } = await supabase
+        .from('retweets')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('post_id', selectedPost.id)
+        .is('quote_content', null)
+        .single();
+
+      if (existing) {
+        // Undo repost
+        await supabase
+          .from('retweets')
+          .delete()
+          .eq('id', existing.id);
+        Alert.alert('Thành công', 'Đã hủy repost');
+      } else {
+        // Create repost
+        await supabase
+          .from('retweets')
+          .insert({
+            user_id: user.id,
+            post_id: selectedPost.id,
+          });
+        Alert.alert('Thành công', 'Đã repost!');
+      }
+      
+      fetchPosts();
+    } catch (error) {
+      console.error('Error reposting:', error);
+      Alert.alert('Lỗi', 'Không thể repost. Vui lòng thử lại.');
+    }
+    setSelectedPost(null);
+  };
+
+  const handleQuotePress = () => {
+    setShowRepostMenu(false);
+    setShowQuoteModal(true);
+  };
+
+  const handleQuoteCreated = () => {
+    setShowQuoteModal(false);
     setSelectedPost(null);
     fetchPosts();
   };
@@ -121,14 +246,32 @@ export default function HomeScreen({ onLogout }) {
             <Text style={styles.actionText}>{item.comments_count || 0}</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => handleRepostPress(item)}
+          >
             <Text style={styles.actionIcon}>🔄</Text>
             <Text style={styles.actionText}>{item.retweets_count || 0}</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.actionButton}>
-            <Text style={styles.actionIcon}>❤️</Text>
-            <Text style={styles.actionText}>{item.likes_count || 0}</Text>
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => handleLikePress(item)}
+          >
+            <View style={styles.iconContainer}>
+              <Text style={[
+                styles.actionIcon,
+                likedPosts.has(item.id) ? styles.likedIcon : styles.unlikedIcon
+              ]}>
+                {likedPosts.has(item.id) ? '❤️' : '♡'}
+              </Text>
+            </View>
+            <Text style={[
+              styles.actionText,
+              likedPosts.has(item.id) && styles.likedText
+            ]}>
+              {item.likes_count || 0}
+            </Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.actionButton}>
@@ -241,6 +384,63 @@ export default function HomeScreen({ onLogout }) {
             onReplyCreated={handleReplyCreated}
           />
         )}
+      </Modal>
+
+      <Modal
+        visible={showQuoteModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => {
+          setShowQuoteModal(false);
+          setSelectedPost(null);
+        }}
+      >
+        {selectedPost && (
+          <QuotePostScreen
+            navigation={{ goBack: () => setShowQuoteModal(false) }}
+            route={{ post: selectedPost }}
+            onQuoteCreated={handleQuoteCreated}
+          />
+        )}
+      </Modal>
+
+      <Modal
+        visible={showRepostMenu}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setShowRepostMenu(false);
+          setSelectedPost(null);
+        }}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => {
+            setShowRepostMenu(false);
+            setSelectedPost(null);
+          }}
+        >
+          <View style={styles.repostMenu}>
+            <TouchableOpacity 
+              style={styles.repostMenuItem}
+              onPress={handleSimpleRepost}
+            >
+              <Text style={styles.repostMenuIcon}>🔄</Text>
+              <Text style={styles.repostMenuText}>Repost</Text>
+            </TouchableOpacity>
+            
+            <View style={styles.repostMenuDivider} />
+            
+            <TouchableOpacity 
+              style={styles.repostMenuItem}
+              onPress={handleQuotePress}
+            >
+              <Text style={styles.repostMenuIcon}>✏️</Text>
+              <Text style={styles.repostMenuText}>Quote</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
       </Modal>
 
       <View style={styles.bottomNav}>
@@ -367,20 +567,38 @@ const styles = StyleSheet.create({
   },
   actions: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     marginTop: 8,
+    gap: 40,
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    minWidth: 50,
+  },
+  iconContainer: {
+    minWidth: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   actionIcon: {
     fontSize: 18,
-    marginRight: 4,
+    marginRight: 8,
   },
   actionText: {
     color: '#8899a6',
     fontSize: 13,
+  },
+  unlikedIcon: {
+    color: '#8899a6',
+    fontSize: 20,
+  },
+  likedIcon: {
+    transform: [{ scale: 1.1 }],
+  },
+  likedText: {
+    color: '#f91880',
+    fontWeight: '600',
   },
   fab: {
     position: 'absolute',
@@ -450,5 +668,37 @@ const styles = StyleSheet.create({
   emptySubtext: {
     color: '#8899a6',
     fontSize: 14,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  repostMenu: {
+    backgroundColor: '#15202b',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#38444d',
+    minWidth: 200,
+    overflow: 'hidden',
+  },
+  repostMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+  },
+  repostMenuIcon: {
+    fontSize: 20,
+    marginRight: 12,
+  },
+  repostMenuText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  repostMenuDivider: {
+    height: 1,
+    backgroundColor: '#38444d',
   },
 });
