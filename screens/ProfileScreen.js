@@ -29,10 +29,15 @@ export default function ProfileScreen({ navigation, route, onLogout }) {
     followersCount: 0,
     followingCount: 0,
   });
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
 
   useEffect(() => {
     fetchUserProfile();
     fetchUserPosts();
+    if (!isOwnProfile && userId) {
+      checkFollowStatus();
+    }
   }, [userId]);
 
   const fetchUserProfile = async () => {
@@ -58,10 +63,22 @@ export default function ProfileScreen({ navigation, route, onLogout }) {
         .select('*', { count: 'exact', head: true })
         .eq('user_id', targetUserId);
       
+      // Fetch followers count
+      const { count: followersCount } = await supabase
+        .from('follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('following_id', targetUserId);
+      
+      // Fetch following count
+      const { count: followingCount } = await supabase
+        .from('follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('follower_id', targetUserId);
+      
       setStats({
         postsCount: postsCount || 0,
-        followersCount: 0,
-        followingCount: 0,
+        followersCount: followersCount || 0,
+        followingCount: followingCount || 0,
       });
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -109,6 +126,75 @@ export default function ProfileScreen({ navigation, route, onLogout }) {
     setShowEditModal(false);
     fetchUserProfile();
     fetchUserPosts();
+  };
+
+  const checkFollowStatus = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || !userId) return;
+
+      const { data, error } = await supabase
+        .from('follows')
+        .select('id')
+        .eq('follower_id', user.id)
+        .eq('following_id', userId)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error checking follow status:', error);
+        return;
+      }
+
+      setIsFollowing(!!data);
+    } catch (error) {
+      console.error('Error checking follow status:', error);
+    }
+  };
+
+  const handleFollowToggle = async () => {
+    try {
+      setFollowLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || !userId) return;
+
+      if (isFollowing) {
+        // Unfollow
+        const { error } = await supabase
+          .from('follows')
+          .delete()
+          .eq('follower_id', user.id)
+          .eq('following_id', userId);
+
+        if (error) throw error;
+
+        setIsFollowing(false);
+        setStats(prev => ({
+          ...prev,
+          followersCount: Math.max(0, prev.followersCount - 1),
+        }));
+      } else {
+        // Follow
+        const { error } = await supabase
+          .from('follows')
+          .insert({
+            follower_id: user.id,
+            following_id: userId,
+          });
+
+        if (error) throw error;
+
+        setIsFollowing(true);
+        setStats(prev => ({
+          ...prev,
+          followersCount: prev.followersCount + 1,
+        }));
+      }
+    } catch (error) {
+      console.error('Error toggling follow:', error);
+      Alert.alert('Lỗi', 'Không thể thực hiện. Vui lòng thử lại.');
+    } finally {
+      setFollowLoading(false);
+    }
   };
 
   const formatTime = (timestamp) => {
@@ -173,9 +259,25 @@ export default function ProfileScreen({ navigation, route, onLogout }) {
           )}
           {!isOwnProfile && (
             <TouchableOpacity 
-              style={[styles.followButton, { backgroundColor: theme.primary }]}
+              style={[
+                styles.followButton, 
+                isFollowing 
+                  ? { backgroundColor: 'transparent', borderWidth: 1, borderColor: theme.border }
+                  : { backgroundColor: theme.primary }
+              ]}
+              onPress={handleFollowToggle}
+              disabled={followLoading}
             >
-              <Text style={styles.followButtonText}>Theo dõi</Text>
+              {followLoading ? (
+                <ActivityIndicator size="small" color={isFollowing ? theme.text : '#fff'} />
+              ) : (
+                <Text style={[
+                  styles.followButtonText,
+                  isFollowing && { color: theme.text }
+                ]}>
+                  {isFollowing ? 'Đang theo dõi' : 'Theo dõi'}
+                </Text>
+              )}
             </TouchableOpacity>
           )}
 

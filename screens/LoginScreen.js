@@ -11,6 +11,7 @@ import {
   Platform,
   Modal,
 } from 'react-native';
+import NetInfo from '@react-native-community/netinfo';
 import { supabase } from '../lib/supabase';
 import SignupScreen from './SignupScreen';
 
@@ -27,16 +28,34 @@ export default function LoginScreen() {
       return;
     }
 
+    // Kiểm tra kết nối mạng
+    const netInfo = await NetInfo.fetch();
+    if (!netInfo.isConnected) {
+      Alert.alert(
+        'Không có kết nối mạng',
+        'Vui lòng kiểm tra kết nối internet và thử lại.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password: password,
-    });
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: password,
+      });
 
-    setLoading(false);
-
-    if (error) {
-      Alert.alert('Đăng nhập thất bại', error.message);
+      if (error) {
+        Alert.alert('Đăng nhập thất bại', error.message);
+      }
+    } catch (error) {
+      Alert.alert(
+        'Lỗi kết nối',
+        'Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.'
+      );
+    } finally {
+      setLoading(false);
     }
   };
 

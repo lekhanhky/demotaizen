@@ -65,12 +65,25 @@ export default function HomeScreen({ onLogout }) {
     }
   };
 
-  const fetchPosts = async () => {
+  const fetchPosts = async (tab = activeTab) => {
     try {
-      const { data, error } = await supabase
-        .from('posts_with_details')
-        .select('*')
-        .order('created_at', { ascending: false });
+      let query;
+      
+      if (tab === 'following') {
+        // Fetch posts from users you follow
+        query = supabase
+          .from('following_feed')
+          .select('*')
+          .order('created_at', { ascending: false });
+      } else {
+        // Fetch all posts (For You feed)
+        query = supabase
+          .from('posts_with_details')
+          .select('*')
+          .order('created_at', { ascending: false });
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setPosts(data || []);
@@ -140,7 +153,7 @@ export default function HomeScreen({ onLogout }) {
 
   useEffect(() => {
     fetchUserProfile();
-    fetchPosts();
+    fetchPosts(activeTab);
     fetchLikedPosts();
     fetchUnreadMessagesCount();
     fetchUnreadNotificationsCount();
@@ -171,12 +184,12 @@ export default function HomeScreen({ onLogout }) {
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchPosts();
+    fetchPosts(activeTab);
   };
 
   const handlePostCreated = () => {
     setShowCreatePost(false);
-    fetchPosts();
+    fetchPosts(activeTab);
   };
 
   const handleReplyPress = (post) => {
@@ -187,7 +200,7 @@ export default function HomeScreen({ onLogout }) {
   const handleReplyCreated = () => {
     setShowReplyModal(false);
     setSelectedPost(null);
-    fetchPosts();
+    fetchPosts(activeTab);
   };
 
   const handleRepostPress = (post) => {
@@ -302,7 +315,7 @@ export default function HomeScreen({ onLogout }) {
         Alert.alert('Thành công', 'Đã repost!');
       }
       
-      fetchPosts();
+      fetchPosts(activeTab);
     } catch (error) {
       console.error('Error reposting:', error);
       Alert.alert('Lỗi', 'Không thể repost. Vui lòng thử lại.');
@@ -318,7 +331,7 @@ export default function HomeScreen({ onLogout }) {
   const handleQuoteCreated = () => {
     setShowQuoteModal(false);
     setSelectedPost(null);
-    fetchPosts();
+    fetchPosts(activeTab);
   };
 
   const handleOpenChat = (conversationId, otherUser) => {
@@ -459,7 +472,11 @@ export default function HomeScreen({ onLogout }) {
       <View style={styles.tabs}>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'forYou' && styles.activeTab]}
-          onPress={() => setActiveTab('forYou')}
+          onPress={() => {
+            setActiveTab('forYou');
+            setLoading(true);
+            fetchPosts('forYou');
+          }}
         >
           <Text style={[styles.tabText, activeTab === 'forYou' && styles.activeTabText]}>
             Dành cho bạn
@@ -468,7 +485,11 @@ export default function HomeScreen({ onLogout }) {
         
         <TouchableOpacity
           style={[styles.tab, activeTab === 'following' && styles.activeTab]}
-          onPress={() => setActiveTab('following')}
+          onPress={() => {
+            setActiveTab('following');
+            setLoading(true);
+            fetchPosts('following');
+          }}
         >
           <Text style={[styles.tabText, activeTab === 'following' && styles.activeTabText]}>
             Đang theo dõi
@@ -490,8 +511,16 @@ export default function HomeScreen({ onLogout }) {
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>Chưa có bài đăng nào</Text>
-            <Text style={styles.emptySubtext}>Hãy tạo bài đăng đầu tiên!</Text>
+            <Text style={styles.emptyText}>
+              {activeTab === 'following' 
+                ? 'Chưa có bài đăng từ người bạn theo dõi' 
+                : 'Chưa có bài đăng nào'}
+            </Text>
+            <Text style={styles.emptySubtext}>
+              {activeTab === 'following'
+                ? 'Hãy theo dõi người dùng để xem bài đăng của họ!'
+                : 'Hãy tạo bài đăng đầu tiên!'}
+            </Text>
           </View>
         }
       />
@@ -697,8 +726,8 @@ export default function HomeScreen({ onLogout }) {
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="search-outline" size={24} color={theme.iconColor} style={{ opacity: 0.6 }} />
-          <Text style={styles.navText}>Tìm kiếm</Text>
+          <Ionicons name="logo-youtube" size={24} color={theme.iconColor} style={{ opacity: 0.6 }} />
+          <Text style={styles.navText}>Youtube</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
@@ -747,7 +776,9 @@ export default function HomeScreen({ onLogout }) {
           ) : (
             <Ionicons name="person-outline" size={24} color={theme.iconColor} style={{ opacity: 0.6 }} />
           )}
-          <Text style={styles.navText}>Hồ sơ</Text>
+          <Text style={styles.navText}>
+            {userProfile?.display_name || 'Hồ sơ'}
+          </Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

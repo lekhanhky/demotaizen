@@ -11,6 +11,7 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
+import NetInfo from '@react-native-community/netinfo';
 import { supabase } from '../lib/supabase';
 
 export default function SignupScreen({ navigation }) {
@@ -38,29 +39,47 @@ export default function SignupScreen({ navigation }) {
       return;
     }
 
+    // Kiểm tra kết nối mạng
+    const netInfo = await NetInfo.fetch();
+    if (!netInfo.isConnected) {
+      Alert.alert(
+        'Không có kết nối mạng',
+        'Vui lòng kiểm tra kết nối internet và thử lại.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
     setLoading(true);
     
-    const { data, error } = await supabase.auth.signUp({
-      email: email.trim(),
-      password: password,
-      options: {
-        data: {
-          username: username.trim().toLowerCase(),
-          display_name: displayName.trim(),
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password: password,
+        options: {
+          data: {
+            username: username.trim().toLowerCase(),
+            display_name: displayName.trim(),
+          }
         }
+      });
+
+      if (error) {
+        Alert.alert('Đăng ký thất bại', error.message);
+      } else {
+        Alert.alert(
+          'Đăng ký thành công!',
+          'Vui lòng kiểm tra email để xác nhận tài khoản.',
+          [{ text: 'OK', onPress: () => navigation?.goBack() }]
+        );
       }
-    });
-
-    setLoading(false);
-
-    if (error) {
-      Alert.alert('Đăng ký thất bại', error.message);
-    } else {
+    } catch (error) {
       Alert.alert(
-        'Đăng ký thành công!',
-        'Vui lòng kiểm tra email để xác nhận tài khoản.',
-        [{ text: 'OK', onPress: () => navigation?.goBack() }]
+        'Lỗi kết nối',
+        'Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.'
       );
+    } finally {
+      setLoading(false);
     }
   };
 
