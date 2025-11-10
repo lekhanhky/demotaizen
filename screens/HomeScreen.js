@@ -24,6 +24,7 @@ import ProfileScreen from './ProfileScreen';
 import MessagesScreen from './MessagesScreen';
 import ChatScreen from './ChatScreen';
 import NewMessageScreen from './NewMessageScreen';
+import NotificationsScreen from './NotificationsScreen';
 
 export default function HomeScreen({ onLogout }) {
   const { theme, isDarkMode, toggleTheme } = useTheme();
@@ -45,6 +46,8 @@ export default function HomeScreen({ onLogout }) {
   const [showNewMessageModal, setShowNewMessageModal] = useState(false);
   const [chatParams, setChatParams] = useState(null);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+  const [showNotificationsModal, setShowNotificationsModal] = useState(false);
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
 
   const fetchUserProfile = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -113,14 +116,33 @@ export default function HomeScreen({ onLogout }) {
     }
   };
 
+  const fetchUnreadNotificationsCount = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { count, error } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('is_read', false);
+
+      if (error) throw error;
+      setUnreadNotificationsCount(count || 0);
+    } catch (error) {
+      console.error('Error fetching unread notifications:', error);
+    }
+  };
+
   useEffect(() => {
     fetchUserProfile();
     fetchPosts();
     fetchLikedPosts();
     fetchUnreadMessagesCount();
+    fetchUnreadNotificationsCount();
 
     // Subscribe to new messages
-    const subscription = supabase
+    const messagesSubscription = supabase
       .channel('messages_changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'messages' },
@@ -128,8 +150,18 @@ export default function HomeScreen({ onLogout }) {
       )
       .subscribe();
 
+    // Subscribe to new notifications
+    const notificationsSubscription = supabase
+      .channel('notifications_changes')
+      .on('postgres_changes', 
+        { event: 'INSERT', schema: 'public', table: 'notifications' },
+        () => fetchUnreadNotificationsCount()
+      )
+      .subscribe();
+
     return () => {
-      subscription.unsubscribe();
+      messagesSubscription.unsubscribe();
+      notificationsSubscription.unsubscribe();
     };
   }, []);
 
@@ -295,6 +327,13 @@ export default function HomeScreen({ onLogout }) {
   const handleOpenNewMessage = () => {
     setShowMessagesModal(false);
     setShowNewMessageModal(true);
+  };
+
+  const handleOpenPost = (postId) => {
+    setShowNotificationsModal(false);
+    // Scroll to post or open post detail
+    // For now, just close the modal
+    Alert.alert('Mở bài viết', `Post ID: ${postId}`);
   };
 
   const formatTime = (timestamp) => {
@@ -607,6 +646,18 @@ export default function HomeScreen({ onLogout }) {
         />
       </Modal>
 
+      <Modal
+        visible={showNotificationsModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowNotificationsModal(false)}
+      >
+        <NotificationsScreen
+          navigation={{ goBack: () => setShowNotificationsModal(false) }}
+          onOpenPost={handleOpenPost}
+        />
+      </Modal>
+
       <View style={styles.bottomNav}>
         <TouchableOpacity style={styles.navItem}>
           <Ionicons name="home" size={24} color={theme.primary} />
@@ -635,8 +686,20 @@ export default function HomeScreen({ onLogout }) {
           <Text style={styles.navText}>Tin nhắn</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="notifications-outline" size={24} color={theme.iconColor} style={{ opacity: 0.6 }} />
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => setShowNotificationsModal(true)}
+        >
+          <View style={styles.iconWithBadge}>
+            <Ionicons name="notifications-outline" size={24} color={theme.iconColor} style={{ opacity: 0.6 }} />
+            {unreadNotificationsCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>
+                  {unreadNotificationsCount > 99 ? '99+' : unreadNotificationsCount}
+                </Text>
+              </View>
+            )}
+          </View>
           <Text style={styles.navText}>Thông báo</Text>
         </TouchableOpacity>
         
