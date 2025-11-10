@@ -28,6 +28,14 @@ export const createStyles = (theme) => StyleSheet.create({
   headerIcon: {
     fontSize: 24,
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  headerButton: {
+    padding: 4,
+  },
   tabs: {
     flexDirection: 'row',
     borderBottomWidth: 1,

@@ -10,9 +10,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../lib/supabase';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -25,6 +27,8 @@ export default function ChatScreen({ navigation, route }) {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [uploading, setUploading] = useState(false);
   const flatListRef = useRef(null);
 
   useEffect(() => {
@@ -89,19 +93,94 @@ export default function ChatScreen({ navigation, route }) {
     }
   };
 
+  const pickImage = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (status !== 'granted') {
+        Alert.alert('Cần quyền truy cập', 'Vui lòng cấp quyền truy cập thư viện ảnh');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setSelectedImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Lỗi', 'Không thể chọn ảnh');
+    }
+  };
+
+  const uploadImage = async (uri) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const fileExt = uri.split('.').pop();
+      const fileName = `${user.id}_${Date.now()}.${fileExt}`;
+      const filePath = `chat-images/${fileName}`;
+
+      // Create FormData for React Native
+      const formData = new FormData();
+      formData.append('file', {
+        uri: uri,
+        type: 'image/jpeg',
+        name: fileName,
+      });
+
+      // Upload using fetch directly to Supabase Storage API
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_SUPABASE_URL}/storage/v1/object/images/${filePath}`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Upload failed');
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('images')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      throw error;
+    }
+  };
+
   const sendMessage = async () => {
-    if (!newMessage.trim() || sending) return;
+    if ((!newMessage.trim() && !selectedImage) || sending) return;
 
     setSending(true);
+    setUploading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
+      let imageUrl = null;
+      if (selectedImage) {
+        imageUrl = await uploadImage(selectedImage);
+      }
+
       const { error } = await supabase
         .from('messages')
         .insert({
           conversation_id: conversationId,
           sender_id: user.id,
-          content: newMessage.trim(),
+          content: newMessage.trim() || '',
+          image_url: imageUrl,
         });
 
       if (error) throw error;
@@ -113,13 +192,16 @@ export default function ChatScreen({ navigation, route }) {
         .eq('id', conversationId);
 
       setNewMessage('');
+      setSelectedImage(null);
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100);
     } catch (error) {
       console.error('Error sending message:', error);
+      Alert.alert('Lỗi', 'Không thể gửi tin nhắn');
     } finally {
       setSending(false);
+      setUploading(false);
     }
   };
 
@@ -160,12 +242,24 @@ export default function ChatScreen({ navigation, route }) {
           styles.messageBubble,
           isOwnMessage ? styles.ownMessageBubble : styles.otherMessageBubble
         ]}>
-          <Text style={[
-            styles.messageText,
-            isOwnMessage ? styles.ownMessageText : styles.otherMessageText
-          ]}>
-            {item.content}
-          </Text>
+          {item.image_url && (
+            <TouchableOpacity activeOpacity={0.9}>
+              <Image 
+                source={{ uri: item.image_url }} 
+                style={styles.messageImage}
+                resizeMode="cover"
+              />
+            </TouchableOpacity>
+          )}
+          {item.content ? (
+            <Text style={[
+              styles.messageText,
+              isOwnMessage ? styles.ownMessageText : styles.otherMessageText,
+              item.image_url && styles.messageTextWithImage
+            ]}>
+              {item.content}
+            </Text>
+          ) : null}
           <Text style={[
             styles.messageTime,
             isOwnMessage ? styles.ownMessageTime : styles.otherMessageTime
@@ -229,9 +323,25 @@ export default function ChatScreen({ navigation, route }) {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
+        {selectedImage && (
+          <View style={styles.imagePreviewContainer}>
+            <Image source={{ uri: selectedImage }} style={styles.imagePreview} />
+            <TouchableOpacity 
+              style={styles.removeImageButton}
+              onPress={() => setSelectedImage(null)}
+            >
+              <Ionicons name="close-circle" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        )}
+        
         <View style={[styles.inputContainer, { backgroundColor: theme.headerBackground, borderTopColor: theme.border }]}>
-          <TouchableOpacity style={styles.attachButton}>
-            <Ionicons name="add-circle-outline" size={28} color={theme.primary} />
+          <TouchableOpacity 
+            style={styles.attachButton}
+            onPress={pickImage}
+            disabled={uploading}
+          >
+            <Ionicons name="image-outline" size={28} color={theme.primary} />
           </TouchableOpacity>
           
           <TextInput
@@ -245,9 +355,9 @@ export default function ChatScreen({ navigation, route }) {
           />
           
           <TouchableOpacity
-            style={[styles.sendButton, (!newMessage.trim() || sending) && styles.sendButtonDisabled]}
+            style={[styles.sendButton, ((!newMessage.trim() && !selectedImage) || sending) && styles.sendButtonDisabled]}
             onPress={sendMessage}
-            disabled={!newMessage.trim() || sending}
+            disabled={(!newMessage.trim() && !selectedImage) || sending}
           >
             {sending ? (
               <ActivityIndicator size="small" color="#fff" />
@@ -411,5 +521,33 @@ const createStyles = (theme) => StyleSheet.create({
     fontSize: 15,
     color: theme.secondaryText,
     marginTop: 8,
+  },
+  messageImage: {
+    width: 200,
+    height: 200,
+    borderRadius: 12,
+    marginBottom: 4,
+  },
+  messageTextWithImage: {
+    marginTop: 4,
+  },
+  imagePreviewContainer: {
+    padding: 12,
+    backgroundColor: theme.headerBackground,
+    borderTopWidth: 1,
+    borderTopColor: theme.border,
+    position: 'relative',
+  },
+  imagePreview: {
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+  },
+  removeImageButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderRadius: 12,
   },
 });

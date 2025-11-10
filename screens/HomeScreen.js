@@ -390,18 +390,19 @@ export default function HomeScreen({ onLogout }) {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={[styles.header, { backgroundColor: theme.headerBackground, borderBottomColor: theme.border }]}>
-        <TouchableOpacity onPress={onLogout}>
-          <Image
-            source={{ uri: userProfile?.avatar_url || 'https://i.pravatar.cc/150?img=3' }}
-            style={styles.headerAvatar}
-          />
-        </TouchableOpacity>
+        <View style={{ width: 32 }} />
         
         <Text style={styles.headerTitle}>X Clone</Text>
         
-        <TouchableOpacity onPress={toggleTheme}>
-          <Text style={styles.headerIcon}>{isDarkMode ? '☀️' : '🌙'}</Text>
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          <TouchableOpacity onPress={toggleTheme} style={styles.headerButton}>
+            <Text style={styles.headerIcon}>{isDarkMode ? '☀️' : '🌙'}</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity onPress={onLogout} style={styles.headerButton}>
+            <Ionicons name="log-out-outline" size={24} color={theme.text} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.tabs}>
