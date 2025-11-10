@@ -26,6 +26,7 @@ import ChatScreen from './ChatScreen';
 import NewMessageScreen from './NewMessageScreen';
 import NotificationsScreen from './NotificationsScreen';
 import PostDetailScreen from './PostDetailScreen';
+import YouTubeScreen from './YouTubeScreen';
 
 export default function HomeScreen({ onLogout }) {
   const { theme, isDarkMode, toggleTheme } = useTheme();
@@ -52,6 +53,7 @@ export default function HomeScreen({ onLogout }) {
   const [showPostDetailModal, setShowPostDetailModal] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState(null);
   const [selectedUserId, setSelectedUserId] = useState(null);
+  const [showYouTubeModal, setShowYouTubeModal] = useState(false);
 
   const fetchUserProfile = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -719,13 +721,27 @@ export default function HomeScreen({ onLogout }) {
         />
       </Modal>
 
+      <Modal
+        visible={showYouTubeModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowYouTubeModal(false)}
+      >
+        <YouTubeScreen
+          navigation={{ goBack: () => setShowYouTubeModal(false) }}
+        />
+      </Modal>
+
       <View style={styles.bottomNav}>
         <TouchableOpacity style={styles.navItem}>
           <Ionicons name="home" size={24} color={theme.primary} />
           <Text style={styles.navTextActive}>Trang chủ</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => setShowYouTubeModal(true)}
+        >
           <Ionicons name="logo-youtube" size={24} color={theme.iconColor} style={{ opacity: 0.6 }} />
           <Text style={styles.navText}>Youtube</Text>
         </TouchableOpacity>
