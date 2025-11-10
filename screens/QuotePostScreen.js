@@ -13,13 +13,16 @@ import {
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { readAsStringAsync } from 'expo-file-system/legacy';
 import { decode } from 'base64-arraybuffer';
 import { supabase } from '../lib/supabase';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function QuotePostScreen({ navigation, route, onQuoteCreated }) {
   const { post } = route || {};
+  const { theme } = useTheme();
   const [quoteContent, setQuoteContent] = useState('');
   const [loading, setLoading] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
@@ -138,6 +141,8 @@ export default function QuotePostScreen({ navigation, route, onQuoteCreated }) {
     return `${diffDays} ngày`;
   };
 
+  const styles = createStyles(theme);
+
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
@@ -147,7 +152,7 @@ export default function QuotePostScreen({ navigation, route, onQuoteCreated }) {
       >
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation?.goBack()}>
-            <Text style={styles.cancelButton}>Hủy</Text>
+            <Ionicons name="close" size={28} color={theme.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Quote Post</Text>
           <TouchableOpacity
@@ -172,7 +177,7 @@ export default function QuotePostScreen({ navigation, route, onQuoteCreated }) {
             <TextInput
               style={styles.input}
               placeholder="Thêm bình luận của bạn"
-              placeholderTextColor="#8899a6"
+              placeholderTextColor={theme.placeholderText}
               multiline
               value={quoteContent}
               onChangeText={setQuoteContent}
@@ -218,7 +223,7 @@ export default function QuotePostScreen({ navigation, route, onQuoteCreated }) {
 
           <View style={styles.footer}>
             <TouchableOpacity style={styles.imageButton} onPress={pickImage}>
-              <Text style={styles.imageButtonIcon}>🖼️</Text>
+              <Ionicons name="image-outline" size={24} color={theme.primary} />
             </TouchableOpacity>
             <Text style={styles.charCount}>
               {quoteContent.length}/280
@@ -230,10 +235,10 @@ export default function QuotePostScreen({ navigation, route, onQuoteCreated }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#15202b',
+    backgroundColor: theme.background,
   },
   header: {
     flexDirection: 'row',
@@ -242,19 +247,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#38444d',
+    borderBottomColor: theme.border,
+    backgroundColor: theme.headerBackground,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff',
-  },
-  cancelButton: {
-    color: '#fff',
-    fontSize: 16,
+    color: theme.text,
   },
   postButton: {
-    backgroundColor: '#1d9bf0',
+    backgroundColor: theme.primary,
     paddingHorizontal: 16,
     paddingVertical: 6,
     borderRadius: 16,
@@ -283,7 +285,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    color: '#fff',
+    color: theme.text,
     fontSize: 16,
     minHeight: 60,
     textAlignVertical: 'top',
@@ -297,7 +299,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 200,
     borderRadius: 12,
-    backgroundColor: '#000',
+    backgroundColor: theme.secondaryBackground,
   },
   removeImageButton: {
     position: 'absolute',
@@ -317,22 +319,23 @@ const styles = StyleSheet.create({
   },
   progressContainer: {
     height: 3,
-    backgroundColor: '#38444d',
+    backgroundColor: theme.border,
     marginHorizontal: 16,
     marginBottom: 12,
     overflow: 'hidden',
   },
   progressBar: {
     height: '100%',
-    backgroundColor: '#1d9bf0',
+    backgroundColor: theme.primary,
   },
   quotedPost: {
     margin: 16,
     marginTop: 8,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#38444d',
+    borderColor: theme.border,
     borderRadius: 12,
+    backgroundColor: theme.secondaryBackground,
   },
   postHeader: {
     flexDirection: 'row',
@@ -350,20 +353,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   authorName: {
-    color: '#fff',
+    color: theme.text,
     fontWeight: 'bold',
     fontSize: 13,
   },
   username: {
-    color: '#8899a6',
+    color: theme.secondaryText,
     fontSize: 13,
   },
   time: {
-    color: '#8899a6',
+    color: theme.secondaryText,
     fontSize: 13,
   },
   quotedContent: {
-    color: '#fff',
+    color: theme.text,
     fontSize: 14,
     lineHeight: 18,
     marginBottom: 8,
@@ -373,6 +376,7 @@ const styles = StyleSheet.create({
     height: 150,
     borderRadius: 8,
     marginTop: 8,
+    backgroundColor: theme.secondaryBackground,
   },
   footer: {
     flexDirection: 'row',
@@ -384,11 +388,8 @@ const styles = StyleSheet.create({
   imageButton: {
     padding: 4,
   },
-  imageButtonIcon: {
-    fontSize: 24,
-  },
   charCount: {
-    color: '#8899a6',
+    color: theme.secondaryText,
     fontSize: 14,
   },
 });

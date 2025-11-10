@@ -153,6 +153,8 @@ export default function EditProfileScreen({ navigation, onProfileUpdated }) {
     }
   };
 
+  const styles = createStyles(theme);
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <KeyboardAvoidingView
@@ -267,7 +269,7 @@ export default function EditProfileScreen({ navigation, onProfileUpdated }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme) => StyleSheet.create({
   container: {
     flex: 1,
   },

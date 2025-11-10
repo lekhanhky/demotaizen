@@ -14,13 +14,16 @@ import {
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { readAsStringAsync } from 'expo-file-system/legacy';
 import { decode } from 'base64-arraybuffer';
 import { supabase } from '../lib/supabase';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function ReplyScreen({ navigation, route, onReplyCreated }) {
   const { post } = route || {};
+  const { theme } = useTheme();
   const [replyContent, setReplyContent] = useState('');
   const [loading, setLoading] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
@@ -166,6 +169,8 @@ export default function ReplyScreen({ navigation, route, onReplyCreated }) {
     }
   };
 
+  const styles = createStyles(theme);
+
   const renderReply = ({ item }) => (
     <View style={styles.replyItem}>
       <Image
@@ -193,10 +198,10 @@ export default function ReplyScreen({ navigation, route, onReplyCreated }) {
           if (onReplyCreated) onReplyCreated();
           if (navigation?.goBack) navigation.goBack();
         }}>
-          <Text style={styles.cancelButton}>Đóng</Text>
+          <Ionicons name="close" size={28} color={theme.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Bài viết</Text>
-        <View style={{ width: 50 }} />
+        <View style={{ width: 28 }} />
       </View>
 
       <KeyboardAvoidingView
@@ -227,7 +232,7 @@ export default function ReplyScreen({ navigation, route, onReplyCreated }) {
 
           {loadingReplies ? (
             <View style={styles.loadingReplies}>
-              <ActivityIndicator color="#1d9bf0" />
+              <ActivityIndicator color={theme.primary} />
             </View>
           ) : replies.length > 0 ? (
             <View style={styles.repliesList}>
@@ -269,7 +274,7 @@ export default function ReplyScreen({ navigation, route, onReplyCreated }) {
             <TextInput
               style={styles.input}
               placeholder="Viết reply của bạn"
-              placeholderTextColor="#8899a6"
+              placeholderTextColor={theme.placeholderText}
               multiline
               value={replyContent}
               onChangeText={setReplyContent}
@@ -279,7 +284,7 @@ export default function ReplyScreen({ navigation, route, onReplyCreated }) {
           <View style={styles.footer}>
             <View style={styles.footerLeft}>
               <TouchableOpacity style={styles.imageButton} onPress={pickImage}>
-                <Text style={styles.imageButtonIcon}>🖼️</Text>
+                <Ionicons name="image-outline" size={24} color={theme.primary} />
               </TouchableOpacity>
               <Text style={styles.charCount}>
                 {replyContent.length}/280
@@ -306,10 +311,10 @@ export default function ReplyScreen({ navigation, route, onReplyCreated }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#15202b',
+    backgroundColor: theme.background,
   },
   header: {
     flexDirection: 'row',
@@ -318,16 +323,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#38444d',
+    borderBottomColor: theme.border,
+    backgroundColor: theme.headerBackground,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff',
-  },
-  cancelButton: {
-    color: '#1d9bf0',
-    fontSize: 16,
+    color: theme.text,
   },
   scrollView: {
     flex: 1,
@@ -335,7 +337,8 @@ const styles = StyleSheet.create({
   originalPost: {
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#38444d',
+    borderBottomColor: theme.border,
+    backgroundColor: theme.background,
   },
   postHeader: {
     flexDirection: 'row',
@@ -349,16 +352,16 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   authorName: {
-    color: '#fff',
+    color: theme.text,
     fontWeight: 'bold',
     fontSize: 15,
   },
   username: {
-    color: '#8899a6',
+    color: theme.secondaryText,
     fontSize: 14,
   },
   originalContent: {
-    color: '#fff',
+    color: theme.text,
     fontSize: 15,
     lineHeight: 20,
     marginLeft: 60,
@@ -370,15 +373,16 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginLeft: 60,
     marginBottom: 12,
+    backgroundColor: theme.secondaryBackground,
   },
   replyingTo: {
-    color: '#8899a6',
+    color: theme.secondaryText,
     fontSize: 14,
     marginLeft: 60,
     marginTop: 8,
   },
   replyingToUsername: {
-    color: '#1d9bf0',
+    color: theme.primary,
   },
   loadingReplies: {
     padding: 20,
@@ -386,10 +390,10 @@ const styles = StyleSheet.create({
   },
   repliesList: {
     borderTopWidth: 8,
-    borderTopColor: '#192734',
+    borderTopColor: theme.border,
   },
   repliesTitle: {
-    color: '#fff',
+    color: theme.text,
     fontSize: 16,
     fontWeight: 'bold',
     padding: 16,
@@ -399,7 +403,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#38444d',
+    borderBottomColor: theme.border,
+    backgroundColor: theme.background,
   },
   replyAvatar: {
     width: 40,
@@ -416,20 +421,20 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   replyAuthorName: {
-    color: '#fff',
+    color: theme.text,
     fontWeight: 'bold',
     fontSize: 15,
   },
   replyUsername: {
-    color: '#8899a6',
+    color: theme.secondaryText,
     fontSize: 14,
   },
   replyTime: {
-    color: '#8899a6',
+    color: theme.secondaryText,
     fontSize: 14,
   },
   replyText: {
-    color: '#fff',
+    color: theme.text,
     fontSize: 15,
     lineHeight: 20,
     marginBottom: 8,
@@ -439,19 +444,20 @@ const styles = StyleSheet.create({
     height: 150,
     borderRadius: 12,
     marginTop: 8,
+    backgroundColor: theme.secondaryBackground,
   },
   noReplies: {
     padding: 40,
     alignItems: 'center',
   },
   noRepliesText: {
-    color: '#8899a6',
+    color: theme.secondaryText,
     fontSize: 15,
   },
   replyInputContainer: {
     borderTopWidth: 1,
-    borderTopColor: '#38444d',
-    backgroundColor: '#15202b',
+    borderTopColor: theme.border,
+    backgroundColor: theme.background,
   },
   replySection: {
     flexDirection: 'row',
@@ -467,7 +473,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    color: '#fff',
+    color: theme.text,
     fontSize: 16,
     maxHeight: 100,
   },
@@ -480,7 +486,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 150,
     borderRadius: 12,
-    backgroundColor: '#000',
+    backgroundColor: theme.secondaryBackground,
   },
   removeImageButton: {
     position: 'absolute',
@@ -500,14 +506,14 @@ const styles = StyleSheet.create({
   },
   progressContainer: {
     height: 3,
-    backgroundColor: '#38444d',
+    backgroundColor: theme.border,
     marginHorizontal: 16,
     marginBottom: 8,
     overflow: 'hidden',
   },
   progressBar: {
     height: '100%',
-    backgroundColor: '#1d9bf0',
+    backgroundColor: theme.primary,
   },
   footer: {
     flexDirection: 'row',
@@ -524,15 +530,12 @@ const styles = StyleSheet.create({
   imageButton: {
     padding: 4,
   },
-  imageButtonIcon: {
-    fontSize: 24,
-  },
   charCount: {
-    color: '#8899a6',
+    color: theme.secondaryText,
     fontSize: 14,
   },
   sendButton: {
-    backgroundColor: '#1d9bf0',
+    backgroundColor: theme.primary,
     paddingHorizontal: 20,
     paddingVertical: 8,
     borderRadius: 20,

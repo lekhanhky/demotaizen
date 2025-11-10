@@ -19,7 +19,6 @@ import { useTheme } from '../contexts/ThemeContext';
 export default function PostDetailScreen({ navigation, route }) {
   const { postId } = route.params;
   const { theme } = useTheme();
-  const styles = createStyles(theme);
   const [post, setPost] = useState(null);
   const [replies, setReplies] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -156,12 +155,23 @@ export default function PostDetailScreen({ navigation, route }) {
     fetchReplies();
   };
 
+  const styles = createStyles(theme);
+
   const renderReply = ({ item }) => (
-    <View style={styles.replyItem}>
-      <Image 
-        source={{ uri: item.avatar_url || `https://i.pravatar.cc/150?u=${item.user_id}` }} 
-        style={styles.avatar} 
-      />
+    <TouchableOpacity 
+      style={styles.replyItem}
+      onPress={() => navigation.push('PostDetail', { postId: item.id })}
+      activeOpacity={0.95}
+    >
+      <TouchableOpacity 
+        onPress={() => navigation.navigate('Profile', { userId: item.user_id })}
+        activeOpacity={0.7}
+      >
+        <Image 
+          source={{ uri: item.avatar_url || `https://i.pravatar.cc/150?u=${item.user_id}` }} 
+          style={styles.avatar} 
+        />
+      </TouchableOpacity>
       <View style={styles.replyContent}>
         <View style={styles.replyHeader}>
           <Text style={styles.authorName}>{item.display_name || 'User'}</Text>
@@ -172,7 +182,7 @@ export default function PostDetailScreen({ navigation, route }) {
         <Text style={styles.content}>{item.content}</Text>
         
         {item.image_url && (
-          <Image source={{ uri: item.image_url }} style={styles.postImage} />
+          <Image source={{ uri: item.image_url }} style={styles.replyImage} />
         )}
         
         <View style={styles.actions}>
@@ -180,12 +190,11 @@ export default function PostDetailScreen({ navigation, route }) {
             style={styles.actionButton}
             onPress={() => handleLikePress(item)}
           >
-            <Text style={[
-              styles.actionIcon,
-              likedPosts.has(item.id) ? styles.likedIcon : styles.unlikedIcon
-            ]}>
-              {likedPosts.has(item.id) ? '❤️' : '♡'}
-            </Text>
+            <Ionicons 
+              name={likedPosts.has(item.id) ? "heart" : "heart-outline"} 
+              size={18} 
+              color={likedPosts.has(item.id) ? theme.likeColor : theme.iconColor} 
+            />
             <Text style={[
               styles.actionText,
               likedPosts.has(item.id) && styles.likedText
@@ -198,11 +207,11 @@ export default function PostDetailScreen({ navigation, route }) {
             style={styles.actionButton}
             onPress={() => handleSharePress(item)}
           >
-            <Text style={styles.actionIcon}>📤</Text>
+            <Ionicons name="share-outline" size={18} color={theme.iconColor} />
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   if (loading) {
@@ -255,7 +264,11 @@ export default function PostDetailScreen({ navigation, route }) {
         }
         ListHeaderComponent={
           <View style={styles.postDetail}>
-            <View style={styles.postHeader}>
+            <TouchableOpacity 
+              style={styles.postHeader}
+              onPress={() => navigation.navigate('Profile', { userId: post.user_id })}
+              activeOpacity={0.7}
+            >
               <Image 
                 source={{ uri: post.avatar_url || `https://i.pravatar.cc/150?u=${post.user_id}` }} 
                 style={styles.largeAvatar} 
@@ -264,7 +277,7 @@ export default function PostDetailScreen({ navigation, route }) {
                 <Text style={styles.authorName}>{post.display_name || 'User'}</Text>
                 <Text style={styles.username}>@{post.username || 'user'}</Text>
               </View>
-            </View>
+            </TouchableOpacity>
             
             <Text style={styles.postContent}>{post.content}</Text>
             
@@ -294,19 +307,25 @@ export default function PostDetailScreen({ navigation, route }) {
                 style={styles.mainActionButton}
                 onPress={() => handleLikePress(post)}
               >
-                <Text style={[
-                  styles.mainActionIcon,
-                  likedPosts.has(post.id) ? styles.likedIcon : styles.unlikedIcon
-                ]}>
-                  {likedPosts.has(post.id) ? '❤️' : '♡'}
-                </Text>
+                <Ionicons 
+                  name={likedPosts.has(post.id) ? "heart" : "heart-outline"} 
+                  size={24} 
+                  color={likedPosts.has(post.id) ? theme.likeColor : theme.iconColor} 
+                />
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.mainActionButton}
+                onPress={() => navigation.navigate('Reply', { postId: post.id })}
+              >
+                <Ionicons name="chatbubble-outline" size={24} color={theme.iconColor} />
               </TouchableOpacity>
               
               <TouchableOpacity 
                 style={styles.mainActionButton}
                 onPress={() => handleSharePress(post)}
               >
-                <Text style={styles.mainActionIcon}>📤</Text>
+                <Ionicons name="share-outline" size={24} color={theme.iconColor} />
               </TouchableOpacity>
             </View>
             
@@ -387,6 +406,15 @@ const createStyles = (theme) => StyleSheet.create({
     height: 300,
     borderRadius: 16,
     marginBottom: 12,
+    backgroundColor: theme.secondaryBackground,
+  },
+  replyImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    marginTop: 8,
+    marginBottom: 8,
+    backgroundColor: theme.secondaryBackground,
   },
   postTime: {
     color: theme.secondaryText,
@@ -418,14 +446,14 @@ const createStyles = (theme) => StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     paddingVertical: 12,
+    borderTopWidth: 1,
     borderBottomWidth: 1,
     borderColor: theme.border,
+    marginTop: 4,
   },
   mainActionButton: {
     padding: 8,
-  },
-  mainActionIcon: {
-    fontSize: 24,
+    borderRadius: 20,
   },
   repliesHeader: {
     paddingTop: 16,
@@ -440,7 +468,7 @@ const createStyles = (theme) => StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: theme.border,
-    backgroundColor: theme.postBackground,
+    backgroundColor: theme.background,
   },
   avatar: {
     width: 40,
@@ -474,22 +502,13 @@ const createStyles = (theme) => StyleSheet.create({
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  actionIcon: {
-    fontSize: 18,
-    marginRight: 8,
+    gap: 4,
   },
   actionText: {
     color: theme.secondaryText,
     fontSize: 13,
     fontWeight: '500',
-  },
-  unlikedIcon: {
-    color: theme.iconColor,
-    fontSize: 20,
-  },
-  likedIcon: {
-    transform: [{ scale: 1.1 }],
+    marginLeft: 4,
   },
   likedText: {
     color: theme.likeColor,

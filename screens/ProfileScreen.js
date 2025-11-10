@@ -112,6 +112,8 @@ export default function ProfileScreen({ navigation, onLogout }) {
     });
   };
 
+  const styles = createStyles(theme);
+
   if (loading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -267,7 +269,7 @@ export default function ProfileScreen({ navigation, onLogout }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme) => StyleSheet.create({
   container: {
     flex: 1,
   },

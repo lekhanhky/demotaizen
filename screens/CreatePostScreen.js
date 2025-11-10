@@ -13,13 +13,16 @@ import {
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { readAsStringAsync } from 'expo-file-system/legacy';
 import { Video } from 'expo-av';
 import { supabase } from '../lib/supabase';
 import { decode } from 'base64-arraybuffer';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function CreatePostScreen({ navigation, onPostCreated }) {
+  const { theme } = useTheme();
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
   const [media, setMedia] = useState(null);
@@ -126,6 +129,8 @@ export default function CreatePostScreen({ navigation, onPostCreated }) {
     }
   };
 
+  const styles = createStyles(theme);
+
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
@@ -134,7 +139,7 @@ export default function CreatePostScreen({ navigation, onPostCreated }) {
       >
         <View style={styles.header}>
           <TouchableOpacity onPress={handleClose}>
-            <Text style={styles.cancelButton}>Hủy</Text>
+            <Ionicons name="close" size={28} color={theme.text} />
           </TouchableOpacity>
           
           <TouchableOpacity
@@ -154,7 +159,7 @@ export default function CreatePostScreen({ navigation, onPostCreated }) {
           <TextInput
             style={styles.input}
             placeholder="Bạn đang nghĩ gì?"
-            placeholderTextColor="#8899a6"
+            placeholderTextColor={theme.placeholderText}
             value={content}
             onChangeText={setContent}
             multiline
@@ -188,7 +193,7 @@ export default function CreatePostScreen({ navigation, onPostCreated }) {
           
           <View style={styles.footer}>
             <TouchableOpacity style={styles.mediaButton} onPress={pickMedia}>
-              <Text style={styles.mediaButtonIcon}>🖼️</Text>
+              <Ionicons name="image-outline" size={20} color={theme.primary} style={{ marginRight: 8 }} />
               <Text style={styles.mediaButtonText}>Ảnh/Video</Text>
             </TouchableOpacity>
             
@@ -202,10 +207,10 @@ export default function CreatePostScreen({ navigation, onPostCreated }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#15202b',
+    backgroundColor: theme.background,
   },
   keyboardView: {
     flex: 1,
@@ -217,14 +222,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#38444d',
-  },
-  cancelButton: {
-    color: '#fff',
-    fontSize: 16,
+    borderBottomColor: theme.border,
+    backgroundColor: theme.headerBackground,
   },
   postButton: {
-    backgroundColor: '#1d9bf0',
+    backgroundColor: theme.primary,
     paddingHorizontal: 20,
     paddingVertical: 8,
     borderRadius: 20,
@@ -232,7 +234,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   postButtonDisabled: {
-    backgroundColor: '#1d9bf080',
+    opacity: 0.5,
   },
   postButtonText: {
     color: '#fff',
@@ -244,7 +246,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   input: {
-    color: '#fff',
+    color: theme.text,
     fontSize: 18,
     minHeight: 100,
     textAlignVertical: 'top',
@@ -258,7 +260,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 200,
     borderRadius: 12,
-    backgroundColor: '#000',
+    backgroundColor: theme.secondaryBackground,
   },
   removeButton: {
     position: 'absolute',
@@ -278,14 +280,14 @@ const styles = StyleSheet.create({
   },
   progressContainer: {
     height: 4,
-    backgroundColor: '#38444d',
+    backgroundColor: theme.border,
     borderRadius: 2,
     marginBottom: 16,
     overflow: 'hidden',
   },
   progressBar: {
     height: '100%',
-    backgroundColor: '#1d9bf0',
+    backgroundColor: theme.primary,
   },
   footer: {
     flexDirection: 'row',
@@ -296,21 +298,17 @@ const styles = StyleSheet.create({
   mediaButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#38444d',
+    backgroundColor: theme.secondaryBackground,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
   },
-  mediaButtonIcon: {
-    fontSize: 20,
-    marginRight: 8,
-  },
   mediaButtonText: {
-    color: '#fff',
+    color: theme.text,
     fontSize: 14,
   },
   charCount: {
-    color: '#8899a6',
+    color: theme.secondaryText,
     fontSize: 13,
   },
 });

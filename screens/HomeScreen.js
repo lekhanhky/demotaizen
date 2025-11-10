@@ -25,6 +25,7 @@ import MessagesScreen from './MessagesScreen';
 import ChatScreen from './ChatScreen';
 import NewMessageScreen from './NewMessageScreen';
 import NotificationsScreen from './NotificationsScreen';
+import PostDetailScreen from './PostDetailScreen';
 
 export default function HomeScreen({ onLogout }) {
   const { theme, isDarkMode, toggleTheme } = useTheme();
@@ -48,6 +49,8 @@ export default function HomeScreen({ onLogout }) {
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   const [showNotificationsModal, setShowNotificationsModal] = useState(false);
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
+  const [showPostDetailModal, setShowPostDetailModal] = useState(false);
+  const [selectedPostId, setSelectedPostId] = useState(null);
 
   const fetchUserProfile = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -331,9 +334,8 @@ export default function HomeScreen({ onLogout }) {
 
   const handleOpenPost = (postId) => {
     setShowNotificationsModal(false);
-    // Scroll to post or open post detail
-    // For now, just close the modal
-    Alert.alert('Mở bài viết', `Post ID: ${postId}`);
+    setSelectedPostId(postId);
+    setShowPostDetailModal(true);
   };
 
   const formatTime = (timestamp) => {
@@ -655,6 +657,18 @@ export default function HomeScreen({ onLogout }) {
         <NotificationsScreen
           navigation={{ goBack: () => setShowNotificationsModal(false) }}
           onOpenPost={handleOpenPost}
+        />
+      </Modal>
+
+      <Modal
+        visible={showPostDetailModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowPostDetailModal(false)}
+      >
+        <PostDetailScreen
+          navigation={{ goBack: () => setShowPostDetailModal(false) }}
+          route={{ params: { postId: selectedPostId } }}
         />
       </Modal>
 
