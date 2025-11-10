@@ -188,6 +188,12 @@ export const createStyles = (theme) => StyleSheet.create({
     fontSize: 24,
     marginBottom: 2,
   },
+  navAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    marginBottom: 2,
+  },
   navText: {
     color: theme.secondaryText,
     fontSize: 11,

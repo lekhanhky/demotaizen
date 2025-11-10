@@ -51,6 +51,7 @@ export default function HomeScreen({ onLogout }) {
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
   const [showPostDetailModal, setShowPostDetailModal] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState(null);
+  const [selectedUserId, setSelectedUserId] = useState(null);
 
   const fetchUserProfile = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -338,6 +339,11 @@ export default function HomeScreen({ onLogout }) {
     setShowPostDetailModal(true);
   };
 
+  const handleOpenUserProfile = (userId) => {
+    setSelectedUserId(userId);
+    setShowProfileModal(true);
+  };
+
   const formatTime = (timestamp) => {
     const now = new Date();
     const postTime = new Date(timestamp);
@@ -353,16 +359,22 @@ export default function HomeScreen({ onLogout }) {
 
   const renderPost = ({ item }) => (
     <View style={styles.post}>
-      <Image 
-        source={{ uri: item.avatar_url || 'https://i.pravatar.cc/150?u=' + item.user_id }} 
-        style={styles.avatar} 
-      />
+      <TouchableOpacity onPress={() => handleOpenUserProfile(item.user_id)}>
+        <Image 
+          source={{ uri: item.avatar_url || 'https://i.pravatar.cc/150?u=' + item.user_id }} 
+          style={styles.avatar} 
+        />
+      </TouchableOpacity>
       <View style={styles.postContent}>
-        <View style={styles.postHeader}>
+        <TouchableOpacity 
+          style={styles.postHeader}
+          onPress={() => handleOpenUserProfile(item.user_id)}
+          activeOpacity={0.7}
+        >
           <Text style={styles.authorName}>{item.display_name || 'User'}</Text>
           <Text style={styles.username}> @{item.username || 'user'}</Text>
           <Text style={styles.time}> • {formatTime(item.created_at)}</Text>
-        </View>
+        </TouchableOpacity>
         
         <Text style={styles.content}>{item.content}</Text>
         
@@ -431,8 +443,6 @@ export default function HomeScreen({ onLogout }) {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={[styles.header, { backgroundColor: theme.headerBackground, borderBottomColor: theme.border }]}>
-        <View style={{ width: 32 }} />
-        
         <Text style={styles.headerTitle}>X Clone</Text>
         
         <View style={styles.headerRight}>
@@ -584,12 +594,20 @@ export default function HomeScreen({ onLogout }) {
         visible={showProfileModal}
         animationType="slide"
         presentationStyle="pageSheet"
-        onRequestClose={() => setShowProfileModal(false)}
+        onRequestClose={() => {
+          setShowProfileModal(false);
+          setSelectedUserId(null);
+        }}
       >
         <ProfileScreen
-          navigation={{ goBack: () => setShowProfileModal(false) }}
+          navigation={{ goBack: () => {
+            setShowProfileModal(false);
+            setSelectedUserId(null);
+          }}}
+          route={{ params: { userId: selectedUserId } }}
           onLogout={() => {
             setShowProfileModal(false);
+            setSelectedUserId(null);
             onLogout();
           }}
         />
@@ -721,7 +739,14 @@ export default function HomeScreen({ onLogout }) {
           style={styles.navItem}
           onPress={() => setShowProfileModal(true)}
         >
-          <Ionicons name="person-outline" size={24} color={theme.iconColor} style={{ opacity: 0.6 }} />
+          {userProfile?.avatar_url ? (
+            <Image 
+              source={{ uri: userProfile.avatar_url }} 
+              style={styles.navAvatar}
+            />
+          ) : (
+            <Ionicons name="person-outline" size={24} color={theme.iconColor} style={{ opacity: 0.6 }} />
+          )}
           <Text style={styles.navText}>Hồ sơ</Text>
         </TouchableOpacity>
       </View>

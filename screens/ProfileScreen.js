@@ -16,12 +16,14 @@ import { supabase } from '../lib/supabase';
 import { useTheme } from '../contexts/ThemeContext';
 import EditProfileScreen from './EditProfileScreen';
 
-export default function ProfileScreen({ navigation, onLogout }) {
+export default function ProfileScreen({ navigation, route, onLogout }) {
   const { theme } = useTheme();
+  const userId = route?.params?.userId; // userId của user muốn xem, null = xem profile của mình
   const [userProfile, setUserProfile] = useState(null);
   const [userPosts, setUserPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [isOwnProfile, setIsOwnProfile] = useState(false);
   const [stats, setStats] = useState({
     postsCount: 0,
     followersCount: 0,
@@ -31,32 +33,36 @@ export default function ProfileScreen({ navigation, onLogout }) {
   useEffect(() => {
     fetchUserProfile();
     fetchUserPosts();
-  }, []);
+  }, [userId]);
 
   const fetchUserProfile = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-        
-        setUserProfile(data);
-        
-        // Fetch stats
-        const { count: postsCount } = await supabase
-          .from('posts')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id);
-        
-        setStats({
-          postsCount: postsCount || 0,
-          followersCount: 0,
-          followingCount: 0,
-        });
-      }
+      if (!user) return;
+
+      // Xác định user ID cần xem (nếu không có userId thì xem profile của mình)
+      const targetUserId = userId || user.id;
+      setIsOwnProfile(targetUserId === user.id);
+
+      const { data } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', targetUserId)
+        .single();
+      
+      setUserProfile(data);
+      
+      // Fetch stats
+      const { count: postsCount } = await supabase
+        .from('posts')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', targetUserId);
+      
+      setStats({
+        postsCount: postsCount || 0,
+        followersCount: 0,
+        followingCount: 0,
+      });
     } catch (error) {
       console.error('Error fetching profile:', error);
     } finally {
@@ -67,16 +73,18 @@ export default function ProfileScreen({ navigation, onLogout }) {
   const fetchUserPosts = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data, error } = await supabase
-          .from('posts_with_details')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
+      if (!user) return;
 
-        if (error) throw error;
-        setUserPosts(data || []);
-      }
+      const targetUserId = userId || user.id;
+
+      const { data, error } = await supabase
+        .from('posts_with_details')
+        .select('*')
+        .eq('user_id', targetUserId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setUserPosts(data || []);
     } catch (error) {
       console.error('Error fetching user posts:', error);
     }
@@ -138,9 +146,12 @@ export default function ProfileScreen({ navigation, onLogout }) {
             {stats.postsCount} bài viết
           </Text>
         </View>
-        <TouchableOpacity onPress={handleLogout}>
-          <Ionicons name="log-out-outline" size={24} color={theme.text} />
-        </TouchableOpacity>
+        {isOwnProfile && (
+          <TouchableOpacity onPress={handleLogout}>
+            <Ionicons name="log-out-outline" size={24} color={theme.text} />
+          </TouchableOpacity>
+        )}
+        {!isOwnProfile && <View style={{ width: 24 }} />}
       </View>
 
       <ScrollView>
@@ -152,12 +163,21 @@ export default function ProfileScreen({ navigation, onLogout }) {
             style={styles.avatar}
           />
           
-          <TouchableOpacity 
-            style={[styles.editButton, { borderColor: theme.border }]}
-            onPress={() => setShowEditModal(true)}
-          >
-            <Text style={[styles.editButtonText, { color: theme.text }]}>Chỉnh sửa hồ sơ</Text>
-          </TouchableOpacity>
+          {isOwnProfile && (
+            <TouchableOpacity 
+              style={[styles.editButton, { borderColor: theme.border }]}
+              onPress={() => setShowEditModal(true)}
+            >
+              <Text style={[styles.editButtonText, { color: theme.text }]}>Chỉnh sửa hồ sơ</Text>
+            </TouchableOpacity>
+          )}
+          {!isOwnProfile && (
+            <TouchableOpacity 
+              style={[styles.followButton, { backgroundColor: theme.primary }]}
+            >
+              <Text style={styles.followButtonText}>Theo dõi</Text>
+            </TouchableOpacity>
+          )}
 
           <Text style={[styles.displayName, { color: theme.text }]}>
             {userProfile?.display_name || 'User'}
@@ -322,6 +342,19 @@ const createStyles = (theme) => StyleSheet.create({
   editButtonText: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  followButton: {
+    position: 'absolute',
+    right: 16,
+    top: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  followButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
   },
   displayName: {
     fontSize: 20,
