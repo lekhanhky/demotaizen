@@ -12,7 +12,7 @@ import {
   ScrollView,
 } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
-import { supabase } from '../lib/supabase';
+import { signUpWithTimeout } from '../utils/authHelpers';
 
 export default function SignupScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -53,33 +53,48 @@ export default function SignupScreen({ navigation }) {
     setLoading(true);
     
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email: email.trim(),
-        password: password,
-        options: {
-          data: {
-            username: username.trim().toLowerCase(),
-            display_name: displayName.trim(),
-          }
-        }
-      });
+      const userData = {
+        username: username.trim().toLowerCase(),
+        display_name: displayName.trim(),
+      };
+
+      // Sử dụng timeout 15 giây
+      const { data, error } = await signUpWithTimeout(email, password, userData, 15000);
 
       if (error) {
-        Alert.alert('Đăng ký thất bại', error.message);
+        setLoading(false);
+        
+        // Xử lý các loại lỗi cụ thể
+        if (error.message.includes('already registered')) {
+          Alert.alert('Đăng ký thất bại', 'Email này đã được đăng ký');
+        } else if (error.message.includes('Password should be')) {
+          Alert.alert('Đăng ký thất bại', 'Mật khẩu không đủ mạnh');
+        } else {
+          Alert.alert('Đăng ký thất bại', error.message);
+        }
+        return;
+      }
+
+      setLoading(false);
+      Alert.alert(
+        'Đăng ký thành công!',
+        'Vui lòng kiểm tra email để xác nhận tài khoản.',
+        [{ text: 'OK', onPress: () => navigation?.goBack() }]
+      );
+    } catch (error) {
+      setLoading(false);
+      
+      if (error.message === 'Timeout') {
+        Alert.alert(
+          'Hết thời gian chờ',
+          'Đăng ký mất quá nhiều thời gian. Vui lòng kiểm tra kết nối mạng và thử lại.'
+        );
       } else {
         Alert.alert(
-          'Đăng ký thành công!',
-          'Vui lòng kiểm tra email để xác nhận tài khoản.',
-          [{ text: 'OK', onPress: () => navigation?.goBack() }]
+          'Lỗi kết nối',
+          'Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.'
         );
       }
-    } catch (error) {
-      Alert.alert(
-        'Lỗi kết nối',
-        'Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.'
-      );
-    } finally {
-      setLoading(false);
     }
   };
 

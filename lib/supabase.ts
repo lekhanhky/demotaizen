@@ -12,4 +12,17 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     detectSessionInUrl: false,
   },
+  global: {
+    headers: {
+      'x-client-info': 'supabase-js-react-native',
+    },
+  },
+  db: {
+    schema: 'public',
+  },
+  realtime: {
+    params: {
+      eventsPerSecond: 10,
+    },
+  },
 });

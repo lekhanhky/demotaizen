@@ -148,7 +148,7 @@ export const createStyles = (theme) => StyleSheet.create({
   fab: {
     position: 'absolute',
     right: 20,
-    bottom: 100,
+    bottom: 140,
     width: 56,
     height: 56,
     borderRadius: 28,

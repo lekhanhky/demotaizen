@@ -12,7 +12,7 @@ import {
   Modal,
 } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
-import { supabase } from '../lib/supabase';
+import { signInWithTimeout } from '../utils/authHelpers';
 import SignupScreen from './SignupScreen';
 
 export default function LoginScreen() {
@@ -40,22 +40,42 @@ export default function LoginScreen() {
     }
 
     setLoading(true);
+
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password: password,
-      });
+      // Sử dụng timeout 15 giây
+      const { data, error } = await signInWithTimeout(email, password, 15000);
 
       if (error) {
-        Alert.alert('Đăng nhập thất bại', error.message);
+        setLoading(false);
+        
+        // Xử lý các loại lỗi cụ thể
+        if (error.message.includes('Invalid login credentials')) {
+          Alert.alert('Đăng nhập thất bại', 'Email hoặc mật khẩu không đúng');
+        } else if (error.message.includes('Email not confirmed')) {
+          Alert.alert('Chưa xác nhận email', 'Vui lòng kiểm tra email và xác nhận tài khoản');
+        } else {
+          Alert.alert('Đăng nhập thất bại', error.message);
+        }
+        return;
       }
+
+      // Đăng nhập thành công
+      console.log('Đăng nhập thành công:', data.user?.email);
+      // Loading sẽ tự tắt khi chuyển màn hình
     } catch (error) {
-      Alert.alert(
-        'Lỗi kết nối',
-        'Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.'
-      );
-    } finally {
       setLoading(false);
+      
+      if (error.message === 'Timeout') {
+        Alert.alert(
+          'Hết thời gian chờ',
+          'Đăng nhập mất quá nhiều thời gian. Vui lòng kiểm tra kết nối mạng và thử lại.'
+        );
+      } else {
+        Alert.alert(
+          'Lỗi kết nối',
+          'Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.'
+        );
+      }
     }
   };
 
@@ -101,12 +121,15 @@ export default function LoginScreen() {
         </View>
 
         <TouchableOpacity
-          style={styles.loginButton}
+          style={[styles.loginButton, loading && styles.loginButtonDisabled]}
           onPress={handleLogin}
           disabled={loading}
         >
           {loading ? (
-            <ActivityIndicator color="#000" />
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator color="#000" />
+              <Text style={styles.loadingText}>Đang đăng nhập...</Text>
+            </View>
           ) : (
             <Text style={styles.loginButtonText}>Đăng nhập</Text>
           )}
@@ -187,6 +210,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 24,
     marginBottom: 16,
+  },
+  loginButtonDisabled: {
+    opacity: 0.7,
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: '#000',
+    fontSize: 14,
+    marginLeft: 8,
+    fontWeight: '600',
   },
   loginButtonText: {
     color: '#000',
