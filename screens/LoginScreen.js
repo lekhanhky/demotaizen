@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,8 +11,10 @@ import {
   Platform,
   Modal,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 import { signInWithTimeout } from '../utils/authHelpers';
+import { supabase } from '../lib/supabase';
 import SignupScreen from './SignupScreen';
 
 export default function LoginScreen() {
@@ -21,6 +23,24 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // Clear any invalid session on mount
+    const clearInvalidSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          // Clear storage if no valid session
+          await AsyncStorage.removeItem('supabase.auth.token');
+        }
+      } catch (error) {
+        console.log('Error checking session:', error);
+        // Clear storage on error
+        await AsyncStorage.removeItem('supabase.auth.token');
+      }
+    };
+    clearInvalidSession();
+  }, []);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -47,6 +67,13 @@ export default function LoginScreen() {
 
       if (error) {
         setLoading(false);
+        
+        // Clear storage on refresh token error
+        if (error.message.includes('Refresh Token') || error.message.includes('refresh_token')) {
+          await AsyncStorage.removeItem('supabase.auth.token');
+          Alert.alert('Phiên đăng nhập hết hạn', 'Vui lòng đăng nhập lại');
+          return;
+        }
         
         // Xử lý các loại lỗi cụ thể
         if (error.message.includes('Invalid login credentials')) {

@@ -26,3 +26,13 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     },
   },
 });
+
+// Clear invalid session on startup
+supabase.auth.onAuthStateChange(async (event, session) => {
+  if (event === 'TOKEN_REFRESHED') {
+    console.log('Token refreshed successfully');
+  } else if (event === 'SIGNED_OUT') {
+    // Clear all auth data from storage
+    await AsyncStorage.removeItem('supabase.auth.token');
+  }
+});

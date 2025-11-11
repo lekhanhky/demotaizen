@@ -88,7 +88,7 @@ export const youtubeService = {
         params: {
           key: YOUTUBE_CONFIG.API_KEY,
           id: videoIds.join(','),
-          part: 'statistics,contentDetails',
+          part: 'snippet,statistics,contentDetails',
         },
       });
 

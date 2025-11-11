@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import { useTheme } from '../contexts/ThemeContext';
 
 export default function CryptoScreen({ navigation }) {
   const { theme } = useTheme();
+  const portfolioListRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [portfolios, setPortfolios] = useState([]);
@@ -72,6 +73,42 @@ export default function CryptoScreen({ navigation }) {
   const handlePortfolioSelect = (portfolio) => {
     setSelectedPortfolio(portfolio);
     fetchPortfolioDetails(portfolio.id);
+  };
+
+  const handlePrevious = () => {
+    if (!selectedPortfolio || portfolios.length === 0) return;
+    const currentIndex = portfolios.findIndex(p => p.id === selectedPortfolio.id);
+    if (currentIndex > 0) {
+      const prevPortfolio = portfolios[currentIndex - 1];
+      handlePortfolioSelect(prevPortfolio);
+      
+      // Scroll to the selected item
+      if (portfolioListRef.current) {
+        portfolioListRef.current.scrollToIndex({
+          index: currentIndex - 1,
+          animated: true,
+          viewPosition: 0.5, // Center the item
+        });
+      }
+    }
+  };
+
+  const handleNext = () => {
+    if (!selectedPortfolio || portfolios.length === 0) return;
+    const currentIndex = portfolios.findIndex(p => p.id === selectedPortfolio.id);
+    if (currentIndex < portfolios.length - 1) {
+      const nextPortfolio = portfolios[currentIndex + 1];
+      handlePortfolioSelect(nextPortfolio);
+      
+      // Scroll to the selected item
+      if (portfolioListRef.current) {
+        portfolioListRef.current.scrollToIndex({
+          index: currentIndex + 1,
+          animated: true,
+          viewPosition: 0.5, // Center the item
+        });
+      }
+    }
   };
 
   const formatNumber = (num) => {
@@ -207,16 +244,61 @@ export default function CryptoScreen({ navigation }) {
       >
         {/* Master Portfolios List */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>
-            Master Portfolios
-          </Text>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+              Master Portfolios
+            </Text>
+            <View style={styles.navigationButtons}>
+              <TouchableOpacity
+                style={[
+                  styles.navButton,
+                  { 
+                    backgroundColor: theme.postBackground,
+                    borderColor: theme.border,
+                    opacity: selectedPortfolio && portfolios.findIndex(p => p.id === selectedPortfolio.id) > 0 ? 1 : 0.3
+                  }
+                ]}
+                onPress={handlePrevious}
+                disabled={!selectedPortfolio || portfolios.findIndex(p => p.id === selectedPortfolio.id) === 0}
+              >
+                <Ionicons name="chevron-back" size={20} color={theme.text} />
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[
+                  styles.navButton,
+                  { 
+                    backgroundColor: theme.postBackground,
+                    borderColor: theme.border,
+                    opacity: selectedPortfolio && portfolios.findIndex(p => p.id === selectedPortfolio.id) < portfolios.length - 1 ? 1 : 0.3
+                  }
+                ]}
+                onPress={handleNext}
+                disabled={!selectedPortfolio || portfolios.findIndex(p => p.id === selectedPortfolio.id) === portfolios.length - 1}
+              >
+                <Ionicons name="chevron-forward" size={20} color={theme.text} />
+              </TouchableOpacity>
+            </View>
+          </View>
+          
           <FlatList
+            ref={portfolioListRef}
             data={portfolios}
             renderItem={renderPortfolioCard}
             keyExtractor={(item) => item.id.toString()}
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.portfolioList}
+            onScrollToIndexFailed={(info) => {
+              const wait = new Promise(resolve => setTimeout(resolve, 500));
+              wait.then(() => {
+                portfolioListRef.current?.scrollToIndex({ 
+                  index: info.index, 
+                  animated: true,
+                  viewPosition: 0.5
+                });
+              });
+            }}
           />
         </View>
 
@@ -312,11 +394,28 @@ const styles = StyleSheet.create({
   section: {
     marginVertical: 12,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    paddingHorizontal: 16,
-    marginBottom: 12,
+  },
+  navigationButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  navButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   portfolioList: {
     paddingHorizontal: 16,

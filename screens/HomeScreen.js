@@ -551,7 +551,7 @@ export default function HomeScreen({ onLogout }) {
       />
 
       <TouchableOpacity 
-        style={[styles.fab, { bottom: bottomNavHeight + 38 }]}
+        style={[styles.fab, { bottom: bottomNavHeight + 76 }]}
         onPress={() => setShowCreatePost(true)}
       >
         <Text style={styles.fabIcon}>+</Text>
