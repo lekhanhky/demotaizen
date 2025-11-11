@@ -91,6 +91,28 @@ export default function LoginScreen() {
 
         <Text style={styles.title}>Đăng Nhập</Text>
 
+        <View style={styles.quickLoginContainer}>
+          <TouchableOpacity
+            style={styles.quickLoginButton}
+            onPress={() => {
+              setEmail('admin@gmail.com');
+              setPassword('123456');
+            }}
+          >
+            <Text style={styles.quickLoginText}>👤 Admin</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={styles.quickLoginButton}
+            onPress={() => {
+              setEmail('user@gmail.com');
+              setPassword('123456');
+            }}
+          >
+            <Text style={styles.quickLoginText}>👥 User</Text>
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
@@ -240,5 +262,26 @@ const styles = StyleSheet.create({
     marginTop: 15,
     fontSize: 14,
     fontWeight: '600',
+  },
+  quickLoginContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12,
+    marginBottom: 24,
+  },
+  quickLoginButton: {
+    backgroundColor: '#1a1a1a',
+    borderWidth: 1,
+    borderColor: '#333',
+    borderRadius: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    minWidth: 100,
+  },
+  quickLoginText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });

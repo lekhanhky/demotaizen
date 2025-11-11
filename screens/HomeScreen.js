@@ -27,6 +27,7 @@ import NewMessageScreen from './NewMessageScreen';
 import NotificationsScreen from './NotificationsScreen';
 import PostDetailScreen from './PostDetailScreen';
 import YouTubeScreen from './YouTubeScreen';
+import CryptoScreen from './CryptoScreen';
 
 export default function HomeScreen({ onLogout }) {
   const { theme, isDarkMode, toggleTheme } = useTheme();
@@ -54,6 +55,7 @@ export default function HomeScreen({ onLogout }) {
   const [selectedPostId, setSelectedPostId] = useState(null);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [showYouTubeModal, setShowYouTubeModal] = useState(false);
+  const [showCryptoModal, setShowCryptoModal] = useState(false);
   const [bottomNavHeight, setBottomNavHeight] = useState(50); // Default height
 
   const fetchUserProfile = async () => {
@@ -508,14 +510,10 @@ export default function HomeScreen({ onLogout }) {
         
         <TouchableOpacity
           style={[styles.tab, activeTab === 'crypto' && styles.activeTab]}
-          onPress={() => {
-            setActiveTab('crypto');
-            setLoading(true);
-            fetchPosts('crypto');
-          }}
+          onPress={() => setShowCryptoModal(true)}
         >
           <Text style={[styles.tabText, activeTab === 'crypto' && styles.activeTabText]}>
-            Crypto
+            TaiFu Index
           </Text>
         </TouchableOpacity>
       </View>
@@ -754,6 +752,17 @@ export default function HomeScreen({ onLogout }) {
       >
         <YouTubeScreen
           navigation={{ goBack: () => setShowYouTubeModal(false) }}
+        />
+      </Modal>
+
+      <Modal
+        visible={showCryptoModal}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={() => setShowCryptoModal(false)}
+      >
+        <CryptoScreen
+          navigation={{ goBack: () => setShowCryptoModal(false) }}
         />
       </Modal>
 
