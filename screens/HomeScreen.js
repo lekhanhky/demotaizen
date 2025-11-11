@@ -54,6 +54,7 @@ export default function HomeScreen({ onLogout }) {
   const [selectedPostId, setSelectedPostId] = useState(null);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [showYouTubeModal, setShowYouTubeModal] = useState(false);
+  const [bottomNavHeight, setBottomNavHeight] = useState(50); // Default height
 
   const fetchUserProfile = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -76,6 +77,13 @@ export default function HomeScreen({ onLogout }) {
         query = supabase
           .from('following_feed')
           .select('*')
+          .order('created_at', { ascending: false });
+      } else if (tab === 'crypto') {
+        // Fetch crypto-related posts (posts containing crypto keywords)
+        query = supabase
+          .from('posts_with_details')
+          .select('*')
+          .or('content.ilike.%bitcoin%,content.ilike.%crypto%,content.ilike.%ethereum%,content.ilike.%btc%,content.ilike.%eth%,content.ilike.%blockchain%')
           .order('created_at', { ascending: false });
       } else {
         // Fetch all posts (For You feed)
@@ -497,6 +505,19 @@ export default function HomeScreen({ onLogout }) {
             Đang theo dõi
           </Text>
         </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'crypto' && styles.activeTab]}
+          onPress={() => {
+            setActiveTab('crypto');
+            setLoading(true);
+            fetchPosts('crypto');
+          }}
+        >
+          <Text style={[styles.tabText, activeTab === 'crypto' && styles.activeTabText]}>
+            Crypto
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <FlatList
@@ -516,11 +537,15 @@ export default function HomeScreen({ onLogout }) {
             <Text style={styles.emptyText}>
               {activeTab === 'following' 
                 ? 'Chưa có bài đăng từ người bạn theo dõi' 
+                : activeTab === 'crypto'
+                ? 'Chưa có bài đăng về Crypto'
                 : 'Chưa có bài đăng nào'}
             </Text>
             <Text style={styles.emptySubtext}>
               {activeTab === 'following'
                 ? 'Hãy theo dõi người dùng để xem bài đăng của họ!'
+                : activeTab === 'crypto'
+                ? 'Hãy tạo bài đăng về Bitcoin, Ethereum, hoặc Crypto!'
                 : 'Hãy tạo bài đăng đầu tiên!'}
             </Text>
           </View>
@@ -528,7 +553,7 @@ export default function HomeScreen({ onLogout }) {
       />
 
       <TouchableOpacity 
-        style={styles.fab}
+        style={[styles.fab, { bottom: bottomNavHeight + 38 }]}
         onPress={() => setShowCreatePost(true)}
       >
         <Text style={styles.fabIcon}>+</Text>
@@ -732,7 +757,13 @@ export default function HomeScreen({ onLogout }) {
         />
       </Modal>
 
-      <View style={styles.bottomNav}>
+      <View 
+        style={styles.bottomNav}
+        onLayout={(event) => {
+          const { height } = event.nativeEvent.layout;
+          setBottomNavHeight(height);
+        }}
+      >
         <TouchableOpacity style={styles.navItem}>
           <Ionicons name="home" size={24} color={theme.primary} />
           <Text style={styles.navTextActive}>Trang chủ</Text>

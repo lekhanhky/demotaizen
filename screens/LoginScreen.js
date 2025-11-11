@@ -42,8 +42,8 @@ export default function LoginScreen() {
     setLoading(true);
 
     try {
-      // Sử dụng timeout 15 giây
-      const { data, error } = await signInWithTimeout(email, password, 15000);
+      // Sử dụng timeout 30 giây với 2 lần thử lại
+      const { data, error } = await signInWithTimeout(email, password, 30000, 2);
 
       if (error) {
         setLoading(false);

@@ -148,7 +148,7 @@ export const createStyles = (theme) => StyleSheet.create({
   fab: {
     position: 'absolute',
     right: 20,
-    bottom: 140,
+    bottom: 90, // Động: chiều cao bottom nav (~50px) + khoảng cách 1cm (~38px) = ~90px
     width: 56,
     height: 56,
     borderRadius: 28,
