@@ -468,7 +468,7 @@ export default function HomeScreen({ onLogout }) {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={[styles.header, { backgroundColor: theme.headerBackground, borderBottomColor: theme.border }]}>
-        <Text style={styles.headerTitle}>X Clone</Text>
+        <Text style={styles.headerTitle}>TAIZEN</Text>
         
         <View style={styles.headerRight}>
           <TouchableOpacity onPress={toggleTheme} style={styles.headerButton}>

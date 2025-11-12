@@ -113,7 +113,7 @@ export default function LoginScreen() {
     >
       <View style={styles.content}>
         <View style={styles.logoContainer}>
-          <Text style={styles.logo}>𝕏</Text>
+          <Text style={styles.logo}>TAIZEN</Text>
         </View>
 
         <Text style={styles.title}>Đăng Nhập</Text>
