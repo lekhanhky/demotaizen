@@ -9,15 +9,35 @@ import HomeScreen from './screens/HomeScreen';
 
 export default function App() {
   const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        // Tự động tạo profile nếu chưa có
-        await ensureUserProfile(session.user.id);
+    // Check session với timeout để tránh treo
+    const checkSession = async () => {
+      try {
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Session check timeout')), 5000)
+        );
+        
+        const sessionPromise = supabase.auth.getSession();
+        
+        const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]);
+        
+        if (session?.user) {
+          // Tự động tạo profile nếu chưa có
+          await ensureUserProfile(session.user.id);
+        }
+        setSession(session);
+      } catch (error) {
+        console.log('Session check error:', error);
+        // Nếu timeout hoặc lỗi, coi như chưa login
+        setSession(null);
+      } finally {
+        setLoading(false);
       }
-      setSession(session);
-    });
+    };
+
+    checkSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
@@ -33,6 +53,11 @@ export default function App() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
   };
+
+  // Show loading state while checking session
+  if (loading) {
+    return null; // hoặc có thể thêm splash screen
+  }
 
   if (!session) {
     return (

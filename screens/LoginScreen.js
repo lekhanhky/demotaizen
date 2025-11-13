@@ -25,21 +25,8 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Clear any invalid session on mount
-    const clearInvalidSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          // Clear storage if no valid session
-          await AsyncStorage.removeItem('supabase.auth.token');
-        }
-      } catch (error) {
-        console.log('Error checking session:', error);
-        // Clear storage on error
-        await AsyncStorage.removeItem('supabase.auth.token');
-      }
-    };
-    clearInvalidSession();
+    // Không cần check session ở đây vì App.js đã handle
+    // Chỉ clear storage nếu có lỗi cụ thể
   }, []);
 
   const handleLogin = async () => {
@@ -62,8 +49,8 @@ export default function LoginScreen() {
     setLoading(true);
 
     try {
-      // Sử dụng timeout 30 giây với 2 lần thử lại
-      const { data, error } = await signInWithTimeout(email, password, 30000, 2);
+      // Sử dụng timeout 10 giây với 1 lần thử lại (tổng tối đa 20s)
+      const { data, error } = await signInWithTimeout(email, password, 10000, 1);
 
       if (error) {
         setLoading(false);
