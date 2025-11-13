@@ -28,6 +28,7 @@ import NotificationsScreen from './NotificationsScreen';
 import PostDetailScreen from './PostDetailScreen';
 import YouTubeScreen from './YouTubeScreen';
 import CryptoScreen from './CryptoScreen';
+import CoinMarketCapScreen from './CoinMarketCapScreen';
 
 export default function HomeScreen({ onLogout }) {
   const { theme, isDarkMode, toggleTheme } = useTheme();
@@ -56,6 +57,7 @@ export default function HomeScreen({ onLogout }) {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [showYouTubeModal, setShowYouTubeModal] = useState(false);
   const [showCryptoModal, setShowCryptoModal] = useState(false);
+  const [showCoinMarketCapModal, setShowCoinMarketCapModal] = useState(false);
   const [bottomNavHeight, setBottomNavHeight] = useState(50); // Default height
 
   const fetchUserProfile = async () => {
@@ -491,7 +493,7 @@ export default function HomeScreen({ onLogout }) {
           }}
         >
           <Text style={[styles.tabText, activeTab === 'forYou' && styles.activeTabText]}>
-            Dành cho bạn
+            For you
           </Text>
         </TouchableOpacity>
         
@@ -504,7 +506,7 @@ export default function HomeScreen({ onLogout }) {
           }}
         >
           <Text style={[styles.tabText, activeTab === 'following' && styles.activeTabText]}>
-            Đang theo dõi
+            Following
           </Text>
         </TouchableOpacity>
         
@@ -514,6 +516,15 @@ export default function HomeScreen({ onLogout }) {
         >
           <Text style={[styles.tabText, activeTab === 'crypto' && styles.activeTabText]}>
             TaiFu Index
+          </Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'coinmarketcap' && styles.activeTab]}
+          onPress={() => setShowCoinMarketCapModal(true)}
+        >
+          <Text style={[styles.tabText, activeTab === 'coinmarketcap' && styles.activeTabText]}>
+            CoinMarketCap
           </Text>
         </TouchableOpacity>
       </View>
@@ -763,6 +774,17 @@ export default function HomeScreen({ onLogout }) {
       >
         <CryptoScreen
           navigation={{ goBack: () => setShowCryptoModal(false) }}
+        />
+      </Modal>
+
+      <Modal
+        visible={showCoinMarketCapModal}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={() => setShowCoinMarketCapModal(false)}
+      >
+        <CoinMarketCapScreen
+          navigation={{ goBack: () => setShowCoinMarketCapModal(false) }}
         />
       </Modal>
 

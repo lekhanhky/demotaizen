@@ -53,7 +53,7 @@ export const createStyles = (theme) => StyleSheet.create({
   },
   tabText: {
     color: theme.secondaryText,
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '600',
   },
   activeTabText: {
