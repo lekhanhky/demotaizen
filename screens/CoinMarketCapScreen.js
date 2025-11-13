@@ -7,16 +7,20 @@ import {
   ActivityIndicator,
   RefreshControl,
   TouchableOpacity,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
+import CoinDetailScreen from './CoinDetailScreen';
 
 export default function CoinMarketCapScreen({ navigation }) {
   const { theme } = useTheme();
   const [cryptoData, setCryptoData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [showCoinDetailModal, setShowCoinDetailModal] = useState(false);
+  const [selectedCoinId, setSelectedCoinId] = useState(null);
 
   const fetchCryptoData = async () => {
     try {
@@ -81,8 +85,17 @@ export default function CoinMarketCapScreen({ navigation }) {
     return `$${marketCap.toLocaleString()}`;
   };
 
+  const handleCoinPress = (coinId) => {
+    setSelectedCoinId(coinId);
+    setShowCoinDetailModal(true);
+  };
+
   const renderCryptoItem = ({ item, index }) => (
-    <View style={[styles.cryptoItem, { backgroundColor: theme.cardBackground, borderBottomColor: theme.border }]}>
+    <TouchableOpacity 
+      style={[styles.cryptoItem, { backgroundColor: theme.cardBackground, borderBottomColor: theme.border }]}
+      onPress={() => handleCoinPress(item.id)}
+      activeOpacity={0.7}
+    >
       <Text style={[styles.rank, { color: theme.secondaryText }]}>{index + 1}</Text>
       
       <View style={styles.cryptoInfo}>
@@ -110,7 +123,7 @@ export default function CoinMarketCapScreen({ navigation }) {
           {formatMarketCap(item.market_cap)}
         </Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   if (loading) {
@@ -172,6 +185,28 @@ export default function CoinMarketCapScreen({ navigation }) {
           style={refreshing && styles.rotating}
         />
       </TouchableOpacity>
+
+      <Modal
+        visible={showCoinDetailModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => {
+          setShowCoinDetailModal(false);
+          setSelectedCoinId(null);
+        }}
+      >
+        {selectedCoinId && (
+          <CoinDetailScreen
+            navigation={{ 
+              goBack: () => {
+                setShowCoinDetailModal(false);
+                setSelectedCoinId(null);
+              }
+            }}
+            route={{ params: { coinId: selectedCoinId } }}
+          />
+        )}
+      </Modal>
     </SafeAreaView>
   );
 }
