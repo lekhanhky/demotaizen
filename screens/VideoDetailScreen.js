@@ -135,6 +135,14 @@ export default function VideoDetailScreen({ navigation, route }) {
             play={playing}
             videoId={videoId}
             onChangeState={onStateChange}
+            webViewProps={{
+              allowsFullscreenVideo: false,
+            }}
+            initialPlayerParams={{
+              controls: true,
+              modestbranding: true,
+              preventFullScreen: true,
+            }}
           />
         </View>
 

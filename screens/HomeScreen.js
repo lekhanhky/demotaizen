@@ -399,7 +399,6 @@ export default function HomeScreen({ onLogout }) {
           activeOpacity={0.7}
         >
           <Text style={styles.authorName}>{item.display_name || 'User'}</Text>
-          <Text style={styles.username}> @{item.username || 'user'}</Text>
           <Text style={styles.time}> • {formatTime(item.created_at)}</Text>
         </TouchableOpacity>
         
