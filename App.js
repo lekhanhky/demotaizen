@@ -16,7 +16,7 @@ export default function App() {
     const checkSession = async () => {
       try {
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Session check timeout')), 5000)
+          setTimeout(() => reject(new Error('Session check timeout')), 10000) // Tăng timeout lên 10 giây
         );
         
         const sessionPromise = supabase.auth.getSession();
@@ -30,8 +30,14 @@ export default function App() {
         setSession(session);
       } catch (error) {
         console.log('Session check error:', error);
-        // Nếu timeout hoặc lỗi, coi như chưa login
-        setSession(null);
+        // Nếu timeout, thử lấy session từ storage trước
+        try {
+          const { data: { session: fallbackSession } } = await supabase.auth.getSession();
+          setSession(fallbackSession);
+        } catch (fallbackError) {
+          console.log('Fallback session check failed:', fallbackError);
+          setSession(null);
+        }
       } finally {
         setLoading(false);
       }
