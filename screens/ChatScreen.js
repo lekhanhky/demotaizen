@@ -478,6 +478,7 @@ const createStyles = (theme) => StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderTopWidth: 1,
+    marginBottom: 38, // ~1cm (khoảng 38 pixels)
   },
   attachButton: {
     padding: 6,
