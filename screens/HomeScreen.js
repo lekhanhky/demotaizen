@@ -476,6 +476,22 @@ export default function HomeScreen({ onLogout }) {
         <Text style={styles.headerTitle}>TAIZEN</Text>
         
         <View style={styles.headerRight}>
+          <TouchableOpacity 
+            onPress={async () => {
+              const Notifications = require('expo-notifications').default;
+              const { status } = await Notifications.getPermissionsAsync();
+              if (status !== 'granted') {
+                const { status: newStatus } = await Notifications.requestPermissionsAsync();
+                Alert.alert('Quyền notification', newStatus === 'granted' ? 'Đã cấp quyền!' : 'Chưa cấp quyền');
+              } else {
+                Alert.alert('Quyền notification', 'Đã có quyền rồi!');
+              }
+            }} 
+            style={styles.headerButton}
+          >
+            <Ionicons name="notifications-outline" size={24} color={theme.text} />
+          </TouchableOpacity>
+          
           <TouchableOpacity onPress={() => setShowAlertMonitorModal(true)} style={styles.headerButton}>
             <Text style={styles.headerIcon}>📊</Text>
           </TouchableOpacity>

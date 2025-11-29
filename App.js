@@ -5,13 +5,38 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ensureUserProfile } from './utils/profileHelper';
 import { startAlertMonitoring, stopAlertMonitoring } from './services/alertMonitorService';
+import { registerBackgroundAlertTask } from './services/backgroundAlertService';
+import * as Notifications from 'expo-notifications';
 import LoginScreen from './screens/LoginScreen';
 import HomeScreen from './screens/HomeScreen';
+import PermissionScreen from './screens/PermissionScreen';
 
 export default function App() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [hasNotificationPermission, setHasNotificationPermission] = useState(false);
+  const [checkingPermission, setCheckingPermission] = useState(true);
 
+  // Check notification permission khi session thay đổi
+  useEffect(() => {
+    const checkNotificationPermission = async () => {
+      if (session) {
+        try {
+          const { status } = await Notifications.getPermissionsAsync();
+          console.log('📱 Notification permission status:', status);
+          setHasNotificationPermission(status === 'granted');
+        } catch (error) {
+          console.error('Error checking notification permission:', error);
+          setHasNotificationPermission(false);
+        }
+      }
+      setCheckingPermission(false);
+    };
+
+    checkNotificationPermission();
+  }, [session]);
+
+  // Check session một lần khi mount
   useEffect(() => {
     // Check session với timeout để tránh treo
     const checkSession = async () => {
@@ -31,6 +56,10 @@ export default function App() {
           // Khởi động alert monitoring service
           console.log('🔔 Starting alert monitoring on app start');
           startAlertMonitoring();
+          
+          // Đăng ký background service
+          console.log('📱 Registering background alert service');
+          await registerBackgroundAlertTask();
         }
         setSession(session);
       } catch (error) {
@@ -58,6 +87,9 @@ export default function App() {
         // Khởi động alert monitoring service khi user đăng nhập
         console.log('🔔 Starting alert monitoring for logged in user');
         startAlertMonitoring();
+        
+        // Đăng ký background service
+        registerBackgroundAlertTask();
       } else {
         // Dừng alert monitoring khi user đăng xuất
         console.log('🔕 Stopping alert monitoring');
@@ -70,18 +102,26 @@ export default function App() {
       subscription.unsubscribe();
       stopAlertMonitoring();
     };
-  }, []);
+  }, []); // Chỉ chạy một lần khi mount
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
   };
 
+  const handlePermissionGranted = () => {
+    setHasNotificationPermission(true);
+  };
+
   // Show loading state while checking session
-  if (loading) {
+  if (loading || checkingPermission) {
+    console.log('Loading...', { loading, checkingPermission });
     return null; // hoặc có thể thêm splash screen
   }
 
+  console.log('App state:', { session: !!session, hasNotificationPermission });
+
   if (!session) {
+    console.log('Showing LoginScreen');
     return (
       <ThemeProvider>
         <SafeAreaProvider>
@@ -91,6 +131,21 @@ export default function App() {
       </ThemeProvider>
     );
   }
+
+  // Hiển thị màn hình yêu cầu quyền nếu chưa có
+  if (!hasNotificationPermission) {
+    console.log('Showing PermissionScreen');
+    return (
+      <ThemeProvider>
+        <SafeAreaProvider>
+          <PermissionScreen onPermissionGranted={handlePermissionGranted} />
+          <StatusBar style="auto" />
+        </SafeAreaProvider>
+      </ThemeProvider>
+    );
+  }
+
+  console.log('Showing HomeScreen');
 
   return (
     <ThemeProvider>

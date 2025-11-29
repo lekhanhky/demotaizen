@@ -1,17 +1,39 @@
 import { supabase } from '../lib/supabase';
 import { showQuickAlert } from '../utils/alertHelper';
+import * as Notifications from 'expo-notifications';
+import * as Haptics from 'expo-haptics';
 
 let monitorChannel = null;
 let isMonitoring = false;
 
 // Khởi động service theo dõi cảnh báo
-export const startAlertMonitoring = () => {
+export const startAlertMonitoring = async () => {
   if (isMonitoring) {
     console.log('Alert monitoring already running');
     return;
   }
 
   console.log('🚀 Starting alert monitoring service...');
+  
+  // Yêu cầu quyền notification
+  try {
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+    
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+    
+    if (finalStatus !== 'granted') {
+      console.log('⚠️ Notification permission not granted');
+    } else {
+      console.log('✅ Notification permission granted');
+    }
+  } catch (error) {
+    console.error('Error requesting notification permission:', error);
+  }
+  
   isMonitoring = true;
 
   // Subscribe to realtime changes
@@ -58,7 +80,7 @@ export const stopAlertMonitoring = () => {
 };
 
 // Kiểm tra một monitor
-const handleAlertCheck = (monitor) => {
+const handleAlertCheck = async (monitor) => {
   if (!monitor.is_active) {
     console.log('Monitor is inactive, skipping');
     return;
@@ -69,11 +91,44 @@ const handleAlertCheck = (monitor) => {
   if (monitor.current_value > monitor.threshold_value) {
     console.log('🚨 ALERT TRIGGERED!');
     
-    showQuickAlert(
-      'EMERGENCY',
-      `${monitor.name}\n\nGiá trị: ${monitor.current_value}\nNgưỡng: ${monitor.threshold_value}\n\n${monitor.alert_message || 'Vượt ngưỡng cảnh báo!'}`,
-      [{ text: 'Đã hiểu' }]
-    );
+    // Rung điện thoại
+    try {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } catch (e) {
+      console.log('Haptics error:', e);
+    }
+    
+    // Gửi notification
+    try {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: '🚨 CẢNH BÁO KHẨN CẤP',
+          body: `${monitor.name}: ${monitor.current_value} > ${monitor.threshold_value}\n\n${monitor.alert_message || 'Vượt ngưỡng cảnh báo!'}`,
+          sound: true,
+          priority: Notifications.AndroidNotificationPriority.MAX,
+          vibrate: [0, 250, 250, 250],
+          data: { 
+            monitorId: monitor.id,
+            type: 'alert'
+          },
+        },
+        trigger: null, // Gửi ngay lập tức
+      });
+      console.log('✅ Notification sent');
+    } catch (error) {
+      console.error('Error sending notification:', error);
+    }
+    
+    // Cũng hiển thị alert nếu app đang mở
+    try {
+      showQuickAlert(
+        'EMERGENCY',
+        `${monitor.name}\n\nGiá trị: ${monitor.current_value}\nNgưỡng: ${monitor.threshold_value}\n\n${monitor.alert_message || 'Vượt ngưỡng cảnh báo!'}`,
+        [{ text: 'Đã hiểu' }]
+      );
+    } catch (e) {
+      console.log('Alert error:', e);
+    }
   }
 };
 

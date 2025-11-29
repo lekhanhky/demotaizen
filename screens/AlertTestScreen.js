@@ -114,6 +114,35 @@ export default function AlertTestScreen({ navigation }) {
     }
   };
 
+  const testNotification = async () => {
+    try {
+      const Notifications = require('expo-notifications').default;
+      
+      // Yêu cầu quyền
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Lỗi', 'Cần cấp quyền notification');
+        return;
+      }
+      
+      // Gửi notification test
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: '🔔 Test Notification',
+          body: 'Đây là notification test! Nếu bạn thấy được thì đã thành công.',
+          sound: true,
+          priority: Notifications.AndroidNotificationPriority.MAX,
+        },
+        trigger: null,
+      });
+      
+      Alert.alert('Thành công', 'Notification đã được gửi!');
+    } catch (error) {
+      console.error('Lỗi test notification:', error);
+      Alert.alert('Lỗi', 'Không thể gửi notification: ' + error.message);
+    }
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
       <View style={[styles.header, { backgroundColor: theme.headerBackground, borderBottomColor: theme.border }]}>
@@ -174,6 +203,11 @@ export default function AlertTestScreen({ navigation }) {
         <TouchableOpacity style={[styles.button, { backgroundColor: '#17a2b8' }]} onPress={testSoundOnly}>
           <Ionicons name="musical-notes" size={24} color="#fff" />
           <Text style={styles.buttonText}>Test Âm thanh (Debug)</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={[styles.button, { backgroundColor: '#6f42c1' }]} onPress={testNotification}>
+          <Ionicons name="notifications-outline" size={24} color="#fff" />
+          <Text style={styles.buttonText}>Test Notification</Text>
         </TouchableOpacity>
 
         <View style={[styles.infoBox, { backgroundColor: theme.inputBackground }]}>
