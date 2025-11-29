@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ensureUserProfile } from './utils/profileHelper';
+import { startAlertMonitoring, stopAlertMonitoring } from './services/alertMonitorService';
 import LoginScreen from './screens/LoginScreen';
 import HomeScreen from './screens/HomeScreen';
 
@@ -26,6 +27,10 @@ export default function App() {
         if (session?.user) {
           // Tự động tạo profile nếu chưa có
           await ensureUserProfile(session.user.id);
+          
+          // Khởi động alert monitoring service
+          console.log('🔔 Starting alert monitoring on app start');
+          startAlertMonitoring();
         }
         setSession(session);
       } catch (error) {
@@ -49,11 +54,22 @@ export default function App() {
       if (session?.user) {
         // Tự động tạo profile khi user login
         await ensureUserProfile(session.user.id);
+        
+        // Khởi động alert monitoring service khi user đăng nhập
+        console.log('🔔 Starting alert monitoring for logged in user');
+        startAlertMonitoring();
+      } else {
+        // Dừng alert monitoring khi user đăng xuất
+        console.log('🔕 Stopping alert monitoring');
+        stopAlertMonitoring();
       }
       setSession(session);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      stopAlertMonitoring();
+    };
   }, []);
 
   const handleLogout = async () => {

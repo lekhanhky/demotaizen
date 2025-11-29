@@ -29,6 +29,8 @@ import PostDetailScreen from './PostDetailScreen';
 import YouTubeScreen from './YouTubeScreen';
 import CryptoScreen from './CryptoScreen';
 import CoinMarketCapScreen from './CoinMarketCapScreen';
+import AlertTestScreen from './AlertTestScreen';
+import AlertMonitorScreen from './AlertMonitorScreen';
 
 export default function HomeScreen({ onLogout }) {
   const { theme, isDarkMode, toggleTheme } = useTheme();
@@ -58,6 +60,8 @@ export default function HomeScreen({ onLogout }) {
   const [showYouTubeModal, setShowYouTubeModal] = useState(false);
   const [showCryptoModal, setShowCryptoModal] = useState(false);
   const [showCoinMarketCapModal, setShowCoinMarketCapModal] = useState(false);
+  const [showAlertTestModal, setShowAlertTestModal] = useState(false);
+  const [showAlertMonitorModal, setShowAlertMonitorModal] = useState(false);
   const [bottomNavHeight, setBottomNavHeight] = useState(50); // Default height
 
   const fetchUserProfile = async () => {
@@ -472,6 +476,14 @@ export default function HomeScreen({ onLogout }) {
         <Text style={styles.headerTitle}>TAIZEN</Text>
         
         <View style={styles.headerRight}>
+          <TouchableOpacity onPress={() => setShowAlertMonitorModal(true)} style={styles.headerButton}>
+            <Text style={styles.headerIcon}>📊</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity onPress={() => setShowAlertTestModal(true)} style={styles.headerButton}>
+            <Text style={styles.headerIcon}>🔔</Text>
+          </TouchableOpacity>
+          
           <TouchableOpacity onPress={toggleTheme} style={styles.headerButton}>
             <Text style={styles.headerIcon}>{isDarkMode ? '☀️' : '🌙'}</Text>
           </TouchableOpacity>
@@ -784,6 +796,28 @@ export default function HomeScreen({ onLogout }) {
       >
         <CoinMarketCapScreen
           navigation={{ goBack: () => setShowCoinMarketCapModal(false) }}
+        />
+      </Modal>
+
+      <Modal
+        visible={showAlertTestModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowAlertTestModal(false)}
+      >
+        <AlertTestScreen
+          navigation={{ goBack: () => setShowAlertTestModal(false) }}
+        />
+      </Modal>
+
+      <Modal
+        visible={showAlertMonitorModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowAlertMonitorModal(false)}
+      >
+        <AlertMonitorScreen
+          navigation={{ goBack: () => setShowAlertMonitorModal(false) }}
         />
       </Modal>
 
