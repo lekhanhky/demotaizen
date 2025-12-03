@@ -23,11 +23,44 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [rememberPassword, setRememberPassword] = useState(false);
 
   useEffect(() => {
-    // Không cần check session ở đây vì App.js đã handle
-    // Chỉ clear storage nếu có lỗi cụ thể
+    // Load saved credentials if available
+    loadSavedCredentials();
   }, []);
+
+  const loadSavedCredentials = async () => {
+    try {
+      const savedEmail = await AsyncStorage.getItem('saved_email');
+      const savedPassword = await AsyncStorage.getItem('saved_password');
+      const shouldRemember = await AsyncStorage.getItem('remember_password');
+      
+      if (shouldRemember === 'true' && savedEmail && savedPassword) {
+        setEmail(savedEmail);
+        setPassword(savedPassword);
+        setRememberPassword(true);
+      }
+    } catch (error) {
+      console.log('Error loading saved credentials:', error);
+    }
+  };
+
+  const saveCredentials = async () => {
+    try {
+      if (rememberPassword) {
+        await AsyncStorage.setItem('saved_email', email);
+        await AsyncStorage.setItem('saved_password', password);
+        await AsyncStorage.setItem('remember_password', 'true');
+      } else {
+        await AsyncStorage.removeItem('saved_email');
+        await AsyncStorage.removeItem('saved_password');
+        await AsyncStorage.removeItem('remember_password');
+      }
+    } catch (error) {
+      console.log('Error saving credentials:', error);
+    }
+  };
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -49,8 +82,8 @@ export default function LoginScreen() {
     setLoading(true);
 
     try {
-      // Sử dụng timeout 10 giây với 1 lần thử lại (tổng tối đa 20s)
-      const { data, error } = await signInWithTimeout(email, password, 10000, 1);
+      // Sử dụng timeout 30 giây với 2 lần thử lại (tổng tối đa 90s)
+      const { data, error } = await signInWithTimeout(email, password, 30000, 2);
 
       if (error) {
         setLoading(false);
@@ -73,7 +106,8 @@ export default function LoginScreen() {
         return;
       }
 
-      // Đăng nhập thành công
+      // Đăng nhập thành công - lưu credentials nếu được chọn
+      await saveCredentials();
       console.log('Đăng nhập thành công:', data.user?.email);
       // Loading sẽ tự tắt khi chuyển màn hình
     } catch (error) {
@@ -155,6 +189,16 @@ export default function LoginScreen() {
             <Text style={styles.eyeText}>{showPassword ? '👁️' : '👁️‍🗨️'}</Text>
           </TouchableOpacity>
         </View>
+
+        <TouchableOpacity
+          style={styles.rememberContainer}
+          onPress={() => setRememberPassword(!rememberPassword)}
+        >
+          <View style={[styles.checkbox, rememberPassword && styles.checkboxChecked]}>
+            {rememberPassword && <Text style={styles.checkmark}>✓</Text>}
+          </View>
+          <Text style={styles.rememberText}>Ghi nhớ mật khẩu</Text>
+        </TouchableOpacity>
 
         <TouchableOpacity
           style={[styles.loginButton, loading && styles.loginButtonDisabled]}
@@ -297,5 +341,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  rememberContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderWidth: 2,
+    borderColor: '#333',
+    borderRadius: 4,
+    marginRight: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
+  checkboxChecked: {
+    backgroundColor: '#1d9bf0',
+    borderColor: '#1d9bf0',
+  },
+  checkmark: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  rememberText: {
+    color: '#fff',
+    fontSize: 14,
   },
 });

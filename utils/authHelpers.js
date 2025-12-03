@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase';
 
-// Helper function với timeout và retry - giảm timeout xuống 10s
-export const signInWithTimeout = async (email, password, timeoutMs = 10000, retries = 1) => {
+// Helper function với timeout và retry
+export const signInWithTimeout = async (email, password, timeoutMs = 30000, retries = 2) => {
   let lastError;
   
   for (let i = 0; i <= retries; i++) {

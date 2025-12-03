@@ -31,6 +31,7 @@ import CryptoScreen from './CryptoScreen';
 import CoinMarketCapScreen from './CoinMarketCapScreen';
 import AlertTestScreen from './AlertTestScreen';
 import AlertMonitorScreen from './AlertMonitorScreen';
+import FullScreenAlertScreen from './FullScreenAlertScreen';
 
 export default function HomeScreen({ onLogout }) {
   const { theme, isDarkMode, toggleTheme } = useTheme();
@@ -388,6 +389,36 @@ export default function HomeScreen({ onLogout }) {
     return `${diffDays} ngày`;
   };
 
+  const handleDeletePost = async (postId) => {
+    Alert.alert(
+      'Xóa bài viết',
+      'Bạn có chắc chắn muốn xóa bài viết này?',
+      [
+        { text: 'Hủy', style: 'cancel' },
+        {
+          text: 'Xóa',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const { error } = await supabase
+                .from('posts')
+                .delete()
+                .eq('id', postId);
+
+              if (error) throw error;
+
+              Alert.alert('Thành công', 'Đã xóa bài viết');
+              fetchPosts(activeTab);
+            } catch (error) {
+              console.error('Error deleting post:', error);
+              Alert.alert('Lỗi', 'Không thể xóa bài viết. Vui lòng thử lại.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const renderPost = ({ item }) => (
     <View style={styles.post}>
       <TouchableOpacity onPress={() => handleOpenUserProfile(item.user_id)}>
@@ -397,14 +428,25 @@ export default function HomeScreen({ onLogout }) {
         />
       </TouchableOpacity>
       <View style={styles.postContent}>
-        <TouchableOpacity 
-          style={styles.postHeader}
-          onPress={() => handleOpenUserProfile(item.user_id)}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.authorName}>{item.display_name || 'User'}</Text>
-          <Text style={styles.time}> • {formatTime(item.created_at)}</Text>
-        </TouchableOpacity>
+        <View style={styles.postHeaderRow}>
+          <TouchableOpacity 
+            style={styles.postHeader}
+            onPress={() => handleOpenUserProfile(item.user_id)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.authorName}>{item.display_name || 'User'}</Text>
+            <Text style={styles.time}> • {formatTime(item.created_at)}</Text>
+          </TouchableOpacity>
+          
+          {userProfile?.id === item.user_id && (
+            <TouchableOpacity 
+              onPress={() => handleDeletePost(item.id)}
+              style={styles.deleteButton}
+            >
+              <Ionicons name="trash-outline" size={18} color="#ef4444" />
+            </TouchableOpacity>
+          )}
+        </View>
         
         <Text style={styles.content}>{item.content}</Text>
         
@@ -476,26 +518,6 @@ export default function HomeScreen({ onLogout }) {
         <Text style={styles.headerTitle}>TAIZEN</Text>
         
         <View style={styles.headerRight}>
-          <TouchableOpacity 
-            onPress={async () => {
-              const Notifications = require('expo-notifications').default;
-              const { status } = await Notifications.getPermissionsAsync();
-              if (status !== 'granted') {
-                const { status: newStatus } = await Notifications.requestPermissionsAsync();
-                Alert.alert('Quyền notification', newStatus === 'granted' ? 'Đã cấp quyền!' : 'Chưa cấp quyền');
-              } else {
-                Alert.alert('Quyền notification', 'Đã có quyền rồi!');
-              }
-            }} 
-            style={styles.headerButton}
-          >
-            <Ionicons name="notifications-outline" size={24} color={theme.text} />
-          </TouchableOpacity>
-          
-          <TouchableOpacity onPress={() => setShowAlertMonitorModal(true)} style={styles.headerButton}>
-            <Text style={styles.headerIcon}>📊</Text>
-          </TouchableOpacity>
-          
           <TouchableOpacity onPress={() => setShowAlertTestModal(true)} style={styles.headerButton}>
             <Text style={styles.headerIcon}>🔔</Text>
           </TouchableOpacity>

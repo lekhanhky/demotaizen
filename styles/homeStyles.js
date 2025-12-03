@@ -79,10 +79,20 @@ export const createStyles = (theme) => StyleSheet.create({
   postContent: {
     flex: 1,
   },
+  postHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
   postHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    flex: 1,
+  },
+  deleteButton: {
+    padding: 4,
+    marginLeft: 8,
   },
   authorName: {
     color: theme.text,

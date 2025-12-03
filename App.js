@@ -1,6 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { supabase } from './lib/supabase';
 import { useEffect, useState } from 'react';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ensureUserProfile } from './utils/profileHelper';
@@ -10,12 +11,23 @@ import * as Notifications from 'expo-notifications';
 import LoginScreen from './screens/LoginScreen';
 import HomeScreen from './screens/HomeScreen';
 import PermissionScreen from './screens/PermissionScreen';
+import FullScreenAlertOverlay from './components/FullScreenAlertOverlay';
+import { setAlertCallback } from './services/globalAlertManager';
 
 export default function App() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [hasNotificationPermission, setHasNotificationPermission] = useState(false);
   const [checkingPermission, setCheckingPermission] = useState(true);
+  const [fullScreenAlert, setFullScreenAlert] = useState(null);
+
+  // Setup global alert callback
+  useEffect(() => {
+    setAlertCallback((monitor) => {
+      console.log('🚨 Showing full-screen alert for:', monitor.name);
+      setFullScreenAlert(monitor);
+    });
+  }, []);
 
   // Check notification permission khi session thay đổi
   useEffect(() => {
@@ -38,16 +50,20 @@ export default function App() {
 
   // Check session một lần khi mount
   useEffect(() => {
+    let mounted = true;
+    
     // Check session với timeout để tránh treo
     const checkSession = async () => {
       try {
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Session check timeout')), 10000) // Tăng timeout lên 10 giây
+          setTimeout(() => reject(new Error('Session check timeout')), 5000)
         );
         
         const sessionPromise = supabase.auth.getSession();
         
         const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]);
+        
+        if (!mounted) return;
         
         if (session?.user) {
           // Tự động tạo profile nếu chưa có
@@ -61,18 +77,18 @@ export default function App() {
           console.log('📱 Registering background alert service');
           await registerBackgroundAlertTask();
         }
-        setSession(session);
+        
+        if (mounted) {
+          setSession(session);
+          setLoading(false);
+        }
       } catch (error) {
         console.log('Session check error:', error);
-        // Nếu timeout, thử lấy session từ storage trước
-        try {
-          const { data: { session: fallbackSession } } = await supabase.auth.getSession();
-          setSession(fallbackSession);
-        } catch (fallbackError) {
-          console.log('Fallback session check failed:', fallbackError);
-          setSession(null);
-        }
-      } finally {
+        
+        if (!mounted) return;
+        
+        // Nếu timeout hoặc lỗi, set session null và cho phép hiển thị login
+        setSession(null);
         setLoading(false);
       }
     };
@@ -99,6 +115,7 @@ export default function App() {
     });
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
       stopAlertMonitoring();
     };
@@ -115,7 +132,11 @@ export default function App() {
   // Show loading state while checking session
   if (loading || checkingPermission) {
     console.log('Loading...', { loading, checkingPermission });
-    return null; // hoặc có thể thêm splash screen
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#1d9bf0" />
+      </View>
+    );
   }
 
   console.log('App state:', { session: !!session, hasNotificationPermission });
@@ -151,8 +172,22 @@ export default function App() {
     <ThemeProvider>
       <SafeAreaProvider>
         <HomeScreen onLogout={handleLogout} />
+        <FullScreenAlertOverlay 
+          visible={!!fullScreenAlert}
+          monitor={fullScreenAlert}
+          onDismiss={() => setFullScreenAlert(null)}
+        />
         <StatusBar style="auto" />
       </SafeAreaProvider>
     </ThemeProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});
