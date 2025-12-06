@@ -14,7 +14,7 @@ import {
 import { supabase } from '../lib/supabase';
 import SignupScreen from './SignupScreen';
 
-export default function LoginScreen() {
+export default function LoginScreen1() {
   const [showSignup, setShowSignup] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,27 +27,18 @@ export default function LoginScreen() {
       return;
     }
 
-    console.log('🔐 Bắt đầu đăng nhập với email:', email);
     setLoading(true);
     
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email,
-        password: password,
-      });
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email,
+      password: password,
+    });
 
-      if (error) {
-        console.error('❌ Lỗi đăng nhập:', error);
-        Alert.alert('Đăng nhập thất bại', error.message);
-      } else {
-        console.log('✅ Đăng nhập thành công:', data.user?.email);
-      }
-    } catch (err) {
-      console.error('❌ Exception:', err);
-      Alert.alert('Lỗi', 'Có lỗi xảy ra khi đăng nhập');
-    } finally {
-      setLoading(false);
+    if (error) {
+      Alert.alert('Đăng nhập thất bại', error.message);
     }
+    
+    setLoading(false);
   }
 
   async function signUpWithEmail() {
