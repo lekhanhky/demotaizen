@@ -27,12 +27,37 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
-// Clear invalid session on startup
+// Handle auth state changes and errors
 supabase.auth.onAuthStateChange(async (event, session) => {
+  console.log('Supabase auth event:', event);
+  
   if (event === 'TOKEN_REFRESHED') {
     console.log('Token refreshed successfully');
   } else if (event === 'SIGNED_OUT') {
+    console.log('User signed out, clearing storage');
     // Clear all auth data from storage
-    await AsyncStorage.removeItem('supabase.auth.token');
+    try {
+      await AsyncStorage.multiRemove([
+        'supabase.auth.token',
+        'sb-' + supabaseUrl.split('//')[1].split('.')[0] + '-auth-token'
+      ]);
+    } catch (error) {
+      console.log('Error clearing auth storage:', error);
+    }
   }
 });
+
+// Add global error handler for auth errors
+const originalRequest = supabase.auth.signInWithPassword;
+supabase.auth.signInWithPassword = async (...args) => {
+  try {
+    return await originalRequest.apply(supabase.auth, args);
+  } catch (error) {
+    if (error.message?.includes('refresh_token_not_found') || 
+        error.message?.includes('Invalid Refresh Token')) {
+      console.log('Refresh token error, clearing session');
+      await supabase.auth.signOut();
+    }
+    throw error;
+  }
+};

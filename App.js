@@ -4,19 +4,20 @@ import { useEffect, useState } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ensureUserProfile } from './utils/profileHelper';
 import { startAlertMonitoring, stopAlertMonitoring } from './services/alertMonitorService';
 import { registerBackgroundAlertTask } from './services/backgroundAlertService';
 import * as Notifications from 'expo-notifications';
-import LoginScreen from './screens/LoginScreen';
+import NewLoginScreen from './screens/NewLoginScreen';
 import HomeScreen from './screens/HomeScreen';
 import PermissionScreen from './screens/PermissionScreen';
 import FullScreenAlertOverlay from './components/FullScreenAlertOverlay';
 import { setAlertCallback } from './services/globalAlertManager';
 
-export default function App() {
-  const [session, setSession] = useState(null);
-  const [loading, setLoading] = useState(true);
+// Component chính với AuthProvider
+function AppContent() {
+  const { user, session } = useAuth();
   const [hasNotificationPermission, setHasNotificationPermission] = useState(false);
   const [checkingPermission, setCheckingPermission] = useState(true);
   const [fullScreenAlert, setFullScreenAlert] = useState(null);
@@ -48,78 +49,28 @@ export default function App() {
     checkNotificationPermission();
   }, [session]);
 
-  // Check session một lần khi mount
+  // Setup monitoring khi user thay đổi
   useEffect(() => {
-    let mounted = true;
-    
-    // Check session với timeout để tránh treo
-    const checkSession = async () => {
-      try {
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Session check timeout')), 5000)
-        );
-        
-        const sessionPromise = supabase.auth.getSession();
-        
-        const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]);
-        
-        if (!mounted) return;
-        
-        if (session?.user) {
-          // Tự động tạo profile nếu chưa có
-          await ensureUserProfile(session.user.id);
-          
-          // Khởi động alert monitoring service
-          console.log('🔔 Starting alert monitoring on app start');
-          startAlertMonitoring();
-          
-          // Đăng ký background service
-          console.log('📱 Registering background alert service');
-          await registerBackgroundAlertTask();
-        }
-        
-        if (mounted) {
-          setSession(session);
-          setLoading(false);
-        }
-      } catch (error) {
-        console.log('Session check error:', error);
-        
-        if (!mounted) return;
-        
-        // Nếu timeout hoặc lỗi, set session null và cho phép hiển thị login
-        setSession(null);
-        setLoading(false);
-      }
-    };
-
-    checkSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
-        // Tự động tạo profile khi user login
-        await ensureUserProfile(session.user.id);
-        
-        // Khởi động alert monitoring service khi user đăng nhập
-        console.log('🔔 Starting alert monitoring for logged in user');
-        startAlertMonitoring();
-        
-        // Đăng ký background service
-        registerBackgroundAlertTask();
-      } else {
-        // Dừng alert monitoring khi user đăng xuất
-        console.log('🔕 Stopping alert monitoring');
-        stopAlertMonitoring();
-      }
-      setSession(session);
-    });
+    if (user) {
+      // Tự động tạo profile nếu chưa có
+      ensureUserProfile(user.id);
+      
+      // Khởi động alert monitoring service
+      console.log('🔔 Starting alert monitoring for logged in user');
+      startAlertMonitoring();
+      
+      // Đăng ký background service
+      registerBackgroundAlertTask();
+    } else {
+      // Dừng alert monitoring khi user đăng xuất
+      console.log('🔕 Stopping alert monitoring');
+      stopAlertMonitoring();
+    }
 
     return () => {
-      mounted = false;
-      subscription.unsubscribe();
       stopAlertMonitoring();
     };
-  }, []); // Chỉ chạy một lần khi mount
+  }, [user]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -129,64 +80,66 @@ export default function App() {
     setHasNotificationPermission(true);
   };
 
-  // Show loading state while checking session
-  if (loading || checkingPermission) {
-    console.log('Loading...', { loading, checkingPermission });
+  // Show loading state while checking permission
+  if (checkingPermission) {
+    console.log('Checking permission...');
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#1d9bf0" />
+        <ActivityIndicator size="large" color="#8BA888" />
       </View>
     );
   }
 
-  console.log('App state:', { session: !!session, hasNotificationPermission });
+  console.log('App state:', { user: !!user, hasNotificationPermission });
 
-  if (!session) {
-    console.log('Showing LoginScreen');
-    return (
-      <ThemeProvider>
-        <SafeAreaProvider>
-          <LoginScreen />
-          <StatusBar style="light" />
-        </SafeAreaProvider>
-      </ThemeProvider>
-    );
+  if (!user) {
+    console.log('Showing NewLoginScreen');
+    return <NewLoginScreen />;
   }
 
   // Hiển thị màn hình yêu cầu quyền nếu chưa có
   if (!hasNotificationPermission) {
     console.log('Showing PermissionScreen');
     return (
-      <ThemeProvider>
-        <SafeAreaProvider>
-          <PermissionScreen onPermissionGranted={handlePermissionGranted} />
-          <StatusBar style="auto" />
-        </SafeAreaProvider>
-      </ThemeProvider>
+      <>
+        <PermissionScreen onPermissionGranted={handlePermissionGranted} />
+        <StatusBar style="auto" />
+      </>
     );
   }
 
   console.log('Showing HomeScreen');
 
   return (
-    <ThemeProvider>
-      <SafeAreaProvider>
-        <HomeScreen onLogout={handleLogout} />
-        <FullScreenAlertOverlay 
-          visible={!!fullScreenAlert}
-          monitor={fullScreenAlert}
-          onDismiss={() => setFullScreenAlert(null)}
-        />
-        <StatusBar style="auto" />
-      </SafeAreaProvider>
-    </ThemeProvider>
+    <>
+      <HomeScreen onLogout={handleLogout} />
+      <FullScreenAlertOverlay 
+        visible={!!fullScreenAlert}
+        monitor={fullScreenAlert}
+        onDismiss={() => setFullScreenAlert(null)}
+      />
+      <StatusBar style="auto" />
+    </>
+  );
+}
+
+// Component wrapper với providers
+export default function App() {
+  return (
+    <AuthProvider>
+      <ThemeProvider>
+        <SafeAreaProvider>
+          <AppContent />
+        </SafeAreaProvider>
+      </ThemeProvider>
+    </AuthProvider>
   );
 }
 
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#FAF8F5',
     justifyContent: 'center',
     alignItems: 'center',
   },
