@@ -1,4 +1,4 @@
-import 'react-native-url-polyfill/auto';
+// Polyfill moved to index.js to avoid conflicts
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 
@@ -27,37 +27,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
-// Handle auth state changes and errors
-supabase.auth.onAuthStateChange(async (event, session) => {
-  console.log('Supabase auth event:', event);
-  
-  if (event === 'TOKEN_REFRESHED') {
-    console.log('Token refreshed successfully');
-  } else if (event === 'SIGNED_OUT') {
-    console.log('User signed out, clearing storage');
-    // Clear all auth data from storage
-    try {
-      await AsyncStorage.multiRemove([
-        'supabase.auth.token',
-        'sb-' + supabaseUrl.split('//')[1].split('.')[0] + '-auth-token'
-      ]);
-    } catch (error) {
-      console.log('Error clearing auth storage:', error);
-    }
-  }
-});
+// Auth state changes are handled in AuthContext.js to avoid duplicate listeners
 
-// Add global error handler for auth errors
-const originalRequest = supabase.auth.signInWithPassword;
-supabase.auth.signInWithPassword = async (...args) => {
-  try {
-    return await originalRequest.apply(supabase.auth, args);
-  } catch (error) {
-    if (error.message?.includes('refresh_token_not_found') || 
-        error.message?.includes('Invalid Refresh Token')) {
-      console.log('Refresh token error, clearing session');
-      await supabase.auth.signOut();
-    }
-    throw error;
-  }
-};
+// Auth error handling is managed in AuthContext.js and authHelper.js
