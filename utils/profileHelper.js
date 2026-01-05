@@ -7,7 +7,7 @@ import { supabase } from '../lib/supabase';
  */
 export const ensureUserProfile = async (userId) => {
   try {
-    // Kiểm tra xem profile đã tồn tại chưa
+    // Check if profile already exists
     const { data: existingProfile, error: checkError } = await supabase
       .from('user_profiles')
       .select('*')
@@ -52,7 +52,7 @@ export const ensureUserProfile = async (userId) => {
 };
 
 /**
- * Tạo profile cho user mới đăng ký
+ * Create profile for new user registration
  * @param {string} userId - ID của user
  * @param {Object} metadata - Metadata từ signup (username, display_name, etc.)
  * @returns {Promise<Object>} Profile data hoặc null

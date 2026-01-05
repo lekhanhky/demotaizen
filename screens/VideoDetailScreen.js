@@ -39,7 +39,7 @@ export default function VideoDetailScreen({ navigation, route }) {
       }
     } catch (error) {
       console.error('Error fetching video details:', error);
-      Alert.alert('Lỗi', 'Không thể tải thông tin video');
+      Alert.alert('Error', 'Cannot load video information');
     } finally {
       setLoading(false);
     }

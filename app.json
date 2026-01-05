@@ -2,6 +2,7 @@
   "expo": {
     "name": "demotaizen",
     "slug": "demotaizen",
+    "owner": "lekhanhky005",
     "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -22,7 +23,7 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.kykhanh2003002.demotaizen",
-      "versionCode": 4,
+      "versionCode": 8,
       "permissions": [
         "VIBRATE",
         "RECEIVE_BOOT_COMPLETED",
@@ -32,11 +33,6 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    },
-    "extra": {
-      "eas": {
-        "projectId": "9add7482-5e2f-4867-83df-1f4c0a9a9470"
-      }
     },
     "plugins": [
       "expo-font",
@@ -48,6 +44,11 @@
           "sounds": []
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "06bf2d7a-9e74-45c7-b8cf-0d1ee3267a13"
+      }
+    }
   }
 }

@@ -91,7 +91,7 @@ export default function FullScreenAlertScreen({ route, navigation }) {
         </Animated.View>
 
         {/* Tiêu đề */}
-        <Text style={styles.title}>🚨 CẢNH BÁO KHẨN CẤP 🚨</Text>
+        <Text style={styles.title}>🚨 CRITICAL ALERT 🚨</Text>
 
         {/* Tên monitor */}
         <View style={styles.infoBox}>
@@ -101,21 +101,21 @@ export default function FullScreenAlertScreen({ route, navigation }) {
         {/* Giá trị */}
         <View style={styles.valuesContainer}>
           <View style={styles.valueBox}>
-            <Text style={styles.valueLabel}>Giá trị hiện tại</Text>
+            <Text style={styles.valueLabel}>Current Value</Text>
             <Text style={styles.currentValue}>{monitor.current_value}</Text>
           </View>
           
           <Ionicons name="arrow-forward" size={40} color="#fff" style={styles.arrow} />
           
           <View style={styles.valueBox}>
-            <Text style={styles.valueLabel}>Ngưỡng cảnh báo</Text>
+            <Text style={styles.valueLabel}>Alert Threshold</Text>
             <Text style={styles.thresholdValue}>{monitor.threshold_value}</Text>
           </View>
         </View>
 
         {/* Message */}
         <View style={styles.messageBox}>
-          <Text style={styles.message}>{monitor.alert_message || 'Vượt ngưỡng cảnh báo!'}</Text>
+          <Text style={styles.message}>{monitor.alert_message || 'Threshold exceeded!'}</Text>
         </View>
 
         {/* Thời gian */}
@@ -128,7 +128,7 @@ export default function FullScreenAlertScreen({ route, navigation }) {
             onPress={handleViewDetails}
           >
             <Ionicons name="eye" size={28} color="#fff" />
-            <Text style={styles.buttonText}>Xem chi tiết</Text>
+            <Text style={styles.buttonText}>View Details</Text>
           </TouchableOpacity>
 
           <TouchableOpacity 
@@ -136,12 +136,12 @@ export default function FullScreenAlertScreen({ route, navigation }) {
             onPress={handleDismiss}
           >
             <Ionicons name="close-circle" size={28} color="#fff" />
-            <Text style={styles.buttonText}>Đã hiểu</Text>
+            <Text style={styles.buttonText}>Dismiss</Text>
           </TouchableOpacity>
         </View>
 
         {/* Swipe hint */}
-        <Text style={styles.hint}>Vuốt xuống để đóng</Text>
+        <Text style={styles.hint}>Swipe down to close</Text>
       </Animated.View>
     </SafeAreaView>
   );

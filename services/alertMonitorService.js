@@ -17,7 +17,7 @@ export const startAlertMonitoring = async () => {
 
   console.log('🚀 Starting alert monitoring service...');
   
-  // Yêu cầu quyền notification
+  // Request notification permission
   try {
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
@@ -73,7 +73,7 @@ export const startAlertMonitoring = async () => {
       }
     });
 
-  // Kiểm tra ngay lập tức khi khởi động
+  // Check immediately on startup
   checkAllMonitors();
 };
 
@@ -87,7 +87,7 @@ export const stopAlertMonitoring = () => {
   }
 };
 
-// Kiểm tra một monitor
+// Check a monitor
 const handleAlertCheck = async (monitor) => {
   console.log('🔍 handleAlertCheck called with:', {
     name: monitor.name,
@@ -115,12 +115,12 @@ const handleAlertCheck = async (monitor) => {
       console.log('❌ Haptics error:', e);
     }
     
-    // Kiểm tra app state
+    // Check app state
     const appState = AppState.currentState;
     console.log('📱 App state:', appState);
     
     if (appState === 'active') {
-      // App đang mở - Hiển thị full-screen alert
+      // App is open - Show full-screen alert
       console.log('🔵 App is active - Showing full-screen alert');
       try {
         showFullScreenAlert(monitor);
@@ -129,7 +129,7 @@ const handleAlertCheck = async (monitor) => {
         console.error('❌ Error showing full-screen alert:', error);
       }
     } else {
-      // App đang đóng hoặc background - Gửi notification
+      // App is closed or in background - Send notification
       console.log('📬 Sending notification');
       try {
         await Notifications.scheduleNotificationAsync({
@@ -155,7 +155,7 @@ const handleAlertCheck = async (monitor) => {
   }
 };
 
-// Kiểm tra tất cả monitors
+// Check all monitors
 const checkAllMonitors = async () => {
   try {
     const { data, error } = await supabase
@@ -178,7 +178,7 @@ const checkAllMonitors = async () => {
   }
 };
 
-// Kiểm tra trạng thái
+// Check status
 export const isAlertMonitoringActive = () => {
   return isMonitoring;
 };

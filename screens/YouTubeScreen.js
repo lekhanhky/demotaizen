@@ -73,7 +73,7 @@ export default function YouTubeScreen({ navigation }) {
     } catch (error) {
       console.error('Error fetching YouTube data:', error);
       console.error('Error message:', error.message);
-      Alert.alert('Lỗi', `Không thể tải dữ liệu YouTube: ${error.message}`);
+      Alert.alert('Error', `Cannot load YouTube data: ${error.message}`);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -207,7 +207,7 @@ export default function YouTubeScreen({ navigation }) {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#FF0000" />
           <Text style={[styles.loadingText, { color: theme.secondaryText }]}>
-            Đang tải video...
+            Loading videos...
           </Text>
         </View>
       </SafeAreaView>

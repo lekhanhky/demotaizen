@@ -39,13 +39,13 @@ const playAlertSound = async (alertType = 'WARNING') => {
           await new Promise(resolve => setTimeout(resolve, 200));
         }
       } catch (err) {
-        console.log('Lỗi phát beep:', err);
+        console.log('Audio playback error:', err);
       }
     }
     
     return true;
   } catch (error) {
-    console.log('Không thể phát âm thanh:', error);
+    console.log('Cannot play sound:', error);
     return false;
   }
 };
@@ -86,7 +86,7 @@ export const showAlert = async ({
           }
         }
       } catch (error) {
-        console.log('Lỗi rung:', error);
+        console.log('Vibration error:', error);
         // Fallback về Vibration thông thường
         Vibration.vibrate(vibrationPattern);
       }
@@ -97,7 +97,7 @@ export const showAlert = async ({
       cancelable: false,
     });
   } catch (error) {
-    console.error('Lỗi khi hiển thị cảnh báo:', error);
+    console.error('Error displaying alert:', error);
     // Fallback: chỉ hiển thị Alert thông thường
     Alert.alert(title, message, buttons);
   }
@@ -125,7 +125,7 @@ export const AlertTypes = {
   
   // Thông báo quan trọng
   IMPORTANT: {
-    title: '🔔 Thông báo quan trọng',
+    title: '🔔 Important Notification',
     vibrationPattern: [0, 300],
     sound: true,
     vibrate: true,

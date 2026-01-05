@@ -22,7 +22,7 @@ TaskManager.defineTask(BACKGROUND_ALERT_TASK, async () => {
   try {
     console.log('🔍 Background task checking alerts...');
     
-    // Kiểm tra monitors
+    // Check monitors
     const { data, error } = await supabase
       .from('alert_monitor')
       .select('*')
@@ -30,12 +30,12 @@ TaskManager.defineTask(BACKGROUND_ALERT_TASK, async () => {
 
     if (error) throw error;
 
-    // Kiểm tra từng monitor
+    // Check each monitor
     for (const monitor of data || []) {
       if (monitor.current_value > monitor.threshold_value) {
         console.log('🚨 Alert detected in background:', monitor.name);
         
-        // Gửi notification
+        // Send notification
         await sendAlertNotification(monitor);
         
         // Rung điện thoại
@@ -71,17 +71,17 @@ const sendAlertNotification = async (monitor) => {
           type: 'alert'
         },
       },
-      trigger: null, // Gửi ngay lập tức
+      trigger: null, // Send immediately
     });
   } catch (error) {
     console.error('Error sending notification:', error);
   }
 };
 
-// Đăng ký background task
+// Register background task
 export const registerBackgroundAlertTask = async () => {
   try {
-    // Kiểm tra quyền notification
+    // Check notification permission
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
     
@@ -108,7 +108,7 @@ export const registerBackgroundAlertTask = async () => {
       });
     }
 
-    // Đăng ký background fetch
+    // Register background fetch
     await BackgroundFetch.registerTaskAsync(BACKGROUND_ALERT_TASK, {
       minimumInterval: 15 * 60, // 15 phút (tối thiểu cho Android)
       stopOnTerminate: false,
@@ -123,7 +123,7 @@ export const registerBackgroundAlertTask = async () => {
   }
 };
 
-// Hủy đăng ký background task
+// Unregister background task
 export const unregisterBackgroundAlertTask = async () => {
   try {
     await BackgroundFetch.unregisterTaskAsync(BACKGROUND_ALERT_TASK);
@@ -133,7 +133,7 @@ export const unregisterBackgroundAlertTask = async () => {
   }
 };
 
-// Kiểm tra trạng thái background task
+// Check background task status
 export const getBackgroundTaskStatus = async () => {
   try {
     const status = await BackgroundFetch.getStatusAsync();
@@ -152,13 +152,13 @@ export const getBackgroundTaskStatus = async () => {
   }
 };
 
-// Gửi notification test
+// Send test notification
 export const sendTestNotification = async () => {
   try {
     await Notifications.scheduleNotificationAsync({
       content: {
         title: '🔔 Test Notification',
-        body: 'Background alert service đang hoạt động!',
+        body: 'Background alert service is running!',
         sound: true,
         priority: Notifications.AndroidNotificationPriority.HIGH,
       },

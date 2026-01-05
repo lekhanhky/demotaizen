@@ -16,12 +16,12 @@ export const signInWithTimeout = async (email, password, timeoutMs = 30000, retr
         ),
       ]);
       
-      // Nếu thành công, trả về kết quả
+      // If successful, return result
       return result;
     } catch (error) {
       lastError = error;
       
-      // Nếu không phải lỗi timeout hoặc đã hết lần thử, throw error
+      // If not timeout error or out of retries, throw error
       if (error.message !== 'Timeout' || i === retries) {
         throw error;
       }
@@ -67,7 +67,7 @@ export const signUpWithTimeout = async (email, password, userData, timeoutMs = 3
   throw lastError;
 };
 
-// Kiểm tra kết nối Supabase
+// Check Supabase connection
 export const checkSupabaseConnection = async () => {
   try {
     const { data, error } = await Promise.race([

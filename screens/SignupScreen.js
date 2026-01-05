@@ -25,17 +25,17 @@ export default function SignupScreen({ navigation }) {
 
   const handleSignup = async () => {
     if (!email || !password || !username || !displayName) {
-      Alert.alert('Lỗi', 'Vui lòng điền đầy đủ thông tin');
+      Alert.alert('Error', 'Please fill in all information');
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Lỗi', 'Mật khẩu xác nhận không khớp');
+      Alert.alert('Error', 'Password confirmation does not match');
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert('Lỗi', 'Mật khẩu phải có ít nhất 6 ký tự');
+      Alert.alert('Error', 'Password must be at least 6 characters');
       return;
     }
 
@@ -43,8 +43,8 @@ export default function SignupScreen({ navigation }) {
     const netInfo = await NetInfo.fetch();
     if (!netInfo.isConnected) {
       Alert.alert(
-        'Không có kết nối mạng',
-        'Vui lòng kiểm tra kết nối internet và thử lại.',
+        'No Internet Connection',
+        'Please check your internet connection and try again.',
         [{ text: 'OK' }]
       );
       return;

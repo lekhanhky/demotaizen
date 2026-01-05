@@ -8,18 +8,17 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ensureUserProfile } from './utils/profileHelper';
 import { startAlertMonitoring, stopAlertMonitoring } from './services/alertMonitorService';
 import { registerBackgroundAlertTask } from './services/backgroundAlertService';
-import * as Notifications from 'expo-notifications';
 import NewLoginScreen from './screens/NewLoginScreen';
 import HomeScreen from './screens/HomeScreen';
-import PermissionScreen from './screens/PermissionScreen';
+import PermissionRequestModal from './components/PermissionRequestModal';
 import FullScreenAlertOverlay from './components/FullScreenAlertOverlay';
 import { setAlertCallback } from './services/globalAlertManager';
 
 // Component chính với AuthProvider
 function AppContent() {
-  const { user, session } = useAuth();
-  const [hasNotificationPermission, setHasNotificationPermission] = useState(false);
-  const [checkingPermission, setCheckingPermission] = useState(true);
+  const { user } = useAuth();
+  const [showPermissionModal, setShowPermissionModal] = useState(false);
+  const [permissionsGranted, setPermissionsGranted] = useState(false);
   const [fullScreenAlert, setFullScreenAlert] = useState(null);
 
   // Setup global alert callback
@@ -30,28 +29,32 @@ function AppContent() {
     });
   }, []);
 
-  // Check notification permission khi session thay đổi
+  // Debug logs
   useEffect(() => {
-    const checkNotificationPermission = async () => {
-      if (session) {
-        try {
-          const { status } = await Notifications.getPermissionsAsync();
-          console.log('📱 Notification permission status:', status);
-          setHasNotificationPermission(status === 'granted');
-        } catch (error) {
-          console.error('Error checking notification permission:', error);
-          setHasNotificationPermission(false);
-        }
-      }
-      setCheckingPermission(false);
-    };
+    console.log('🔍 Debug - App state changed:', { 
+      hasUser: !!user, 
+      permissionsGranted, 
+      showPermissionModal 
+    });
+  }, [user, permissionsGranted, showPermissionModal]);
 
-    checkNotificationPermission();
-  }, [session]);
-
-  // Setup monitoring khi user thay đổi
+  // Hiển thị modal quyền khi user đăng nhập lần đầu
   useEffect(() => {
-    if (user) {
+    console.log('🔍 Debug - User effect triggered:', { hasUser: !!user, permissionsGranted });
+    
+    if (user && !permissionsGranted) {
+      console.log('� Debug - Saetting showPermissionModal to true');
+      setShowPermissionModal(true);
+    } else if (!user) {
+      // Reset states khi logout
+      setShowPermissionModal(false);
+      setPermissionsGranted(false);
+    }
+  }, [user, permissionsGranted]);
+
+  // Setup monitoring khi user thay đổi và đã có quyền
+  useEffect(() => {
+    if (user && permissionsGranted) {
       // Tự động tạo profile nếu chưa có
       ensureUserProfile(user.id);
       
@@ -62,7 +65,7 @@ function AppContent() {
       // Đăng ký background service
       registerBackgroundAlertTask();
     } else {
-      // Dừng alert monitoring khi user đăng xuất
+      // Dừng alert monitoring khi user đăng xuất hoặc chưa có quyền
       console.log('🔕 Stopping alert monitoring');
       stopAlertMonitoring();
     }
@@ -70,53 +73,58 @@ function AppContent() {
     return () => {
       stopAlertMonitoring();
     };
-  }, [user]);
+  }, [user, permissionsGranted]);
 
   const handleLogout = async () => {
+    console.log('🔍 Debug - Logging out');
     await supabase.auth.signOut();
   };
 
-  const handlePermissionGranted = () => {
-    setHasNotificationPermission(true);
+  const handlePermissionsGranted = () => {
+    console.log('🔍 Debug - Permissions granted, hiding modal');
+    setShowPermissionModal(false);
+    setPermissionsGranted(true);
   };
 
-  // Show loading state while checking permission
-  if (checkingPermission) {
-    console.log('Checking permission...');
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#8BA888" />
-      </View>
-    );
-  }
-
-  console.log('App state:', { user: !!user, hasNotificationPermission });
+  // Debug current state
+  console.log('🔍 Debug - Current render state:', { 
+    hasUser: !!user, 
+    permissionsGranted, 
+    showPermissionModal,
+    willShowModal: user && !permissionsGranted
+  });
 
   if (!user) {
-    console.log('Showing NewLoginScreen');
+    console.log('🔍 Debug - Showing NewLoginScreen');
     return <NewLoginScreen />;
   }
 
-  // Hiển thị màn hình yêu cầu quyền nếu chưa có
-  if (!hasNotificationPermission) {
-    console.log('Showing PermissionScreen');
+  // Hiển thị HomeScreen nếu đã có quyền
+  if (permissionsGranted) {
+    console.log('🔍 Debug - Showing HomeScreen');
     return (
       <>
-        <PermissionScreen onPermissionGranted={handlePermissionGranted} />
+        <HomeScreen onLogout={handleLogout} />
+        <FullScreenAlertOverlay 
+          visible={!!fullScreenAlert}
+          monitor={fullScreenAlert}
+          onDismiss={() => setFullScreenAlert(null)}
+        />
         <StatusBar style="auto" />
       </>
     );
   }
 
-  console.log('Showing HomeScreen');
-
+  // Hiển thị modal yêu cầu quyền
+  console.log('🔍 Debug - Showing permission modal with visible:', showPermissionModal);
   return (
     <>
-      <HomeScreen onLogout={handleLogout} />
-      <FullScreenAlertOverlay 
-        visible={!!fullScreenAlert}
-        monitor={fullScreenAlert}
-        onDismiss={() => setFullScreenAlert(null)}
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#8BA888" />
+      </View>
+      <PermissionRequestModal
+        visible={showPermissionModal}
+        onAllPermissionsGranted={handlePermissionsGranted}
       />
       <StatusBar style="auto" />
     </>
