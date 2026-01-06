@@ -2,7 +2,7 @@
   "expo": {
     "name": "demotaizen",
     "slug": "demotaizen",
-    "owner": "lekhanhky005",
+    "owner": "lekhanhky006",
     "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -23,7 +23,6 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.kykhanh2003002.demotaizen",
-      "versionCode": 8,
       "permissions": [
         "VIBRATE",
         "RECEIVE_BOOT_COMPLETED",
@@ -47,7 +46,7 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "06bf2d7a-9e74-45c7-b8cf-0d1ee3267a13"
+        "projectId": "467c8dba-b14b-4b0b-bf9d-73d0e7bd0aeb"
       }
     }
   }
