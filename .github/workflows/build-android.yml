@@ -37,7 +37,7 @@ jobs:
       run: npm install -g @expo/cli
 
     - name: Generate Android project
-      run: npx expo run:android --no-build-cache --no-install --no-bundler
+      run: npx expo prebuild --platform android --clean
 
     - name: Make gradlew executable
       run: chmod +x android/gradlew
