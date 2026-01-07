@@ -96,27 +96,27 @@ export default function FullScreenAlertOverlay({ visible, monitor, onDismiss }) 
             <Ionicons name="warning" size={120} color="#fff" />
           </Animated.View>
 
-          <Text style={styles.title}>🚨 CẢNH BÁO KHẨN CẤP 🚨</Text>
+          <Text style={styles.title}>🚨 URGENT ALERT 🚨</Text>
 
           <View style={styles.valuesContainer}>
             <View style={styles.valueBox}>
-              <Text style={styles.valueLabel}>Giá trị hiện tại</Text>
+              <Text style={styles.valueLabel}>Current Value</Text>
               <Text style={styles.currentValue}>{monitor.current_value}</Text>
             </View>
             
             <Ionicons name="arrow-forward" size={40} color="#fff" style={styles.arrow} />
             
             <View style={styles.valueBox}>
-              <Text style={styles.valueLabel}>Ngưỡng cảnh báo</Text>
+              <Text style={styles.valueLabel}>Alert Threshold</Text>
               <Text style={styles.thresholdValue}>{monitor.threshold_value}</Text>
             </View>
           </View>
 
-          <Text style={styles.time}>{new Date().toLocaleTimeString('vi-VN')}</Text>
+          <Text style={styles.time}>{new Date().toLocaleTimeString('en-US')}</Text>
 
           <TouchableOpacity style={styles.dismissButton} onPress={onDismiss}>
             <Ionicons name="close-circle" size={32} color="#fff" />
-            <Text style={styles.buttonText}>Đã hiểu</Text>
+            <Text style={styles.buttonText}>Got it</Text>
           </TouchableOpacity>
         </Animated.View>
       </SafeAreaView>
