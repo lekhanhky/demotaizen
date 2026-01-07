@@ -8,8 +8,10 @@ import {
   Alert,
   Platform,
   Linking,
-  ScrollView
+  ScrollView,
+  Image
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as MediaLibrary from 'expo-media-library';
 import * as Notifications from 'expo-notifications';
@@ -17,12 +19,12 @@ import { Audio } from 'expo-av';
 
 const PermissionRequestModal = ({ visible, onAllPermissionsGranted }) => {
   const [permissions, setPermissions] = useState({
-    notifications: { granted: false, checking: true },
-    audio: { granted: false, checking: true },
-    mediaLibrary: { granted: false, checking: true }
+    notifications: { granted: false, checking: false },
+    audio: { granted: false, checking: false },
+    mediaLibrary: { granted: false, checking: false }
   });
 
-  const [allChecked, setAllChecked] = useState(false);
+  const [allChecked, setAllChecked] = useState(true); // Set to true since we're not checking initially
 
   // Debug log khi component mount
   useEffect(() => {
@@ -32,10 +34,8 @@ const PermissionRequestModal = ({ visible, onAllPermissionsGranted }) => {
   // Debug log khi visible thay đổi
   useEffect(() => {
     console.log('🔍 PermissionRequestModal - Visible changed to:', visible);
-    if (visible) {
-      console.log('🔍 PermissionRequestModal - Starting permission check...');
-      checkPermissions();
-    }
+    // Don't auto-check permissions when modal becomes visible
+    // User needs to manually grant each permission
   }, [visible]);
 
   // Danh sách quyền cần thiết
@@ -113,6 +113,15 @@ const PermissionRequestModal = ({ visible, onAllPermissionsGranted }) => {
 
   // Yêu cầu quyền cụ thể
   const requestPermission = async (permissionType) => {
+    // Set checking state
+    setPermissions(prev => ({
+      ...prev,
+      [permissionType]: {
+        ...prev[permissionType],
+        checking: true
+      }
+    }));
+
     try {
       let result;
       
@@ -151,14 +160,25 @@ const PermissionRequestModal = ({ visible, onAllPermissionsGranted }) => {
       }
     } catch (error) {
       console.error(`Error requesting ${permissionType} permission:`, error);
+      // Reset checking state on error
+      setPermissions(prev => ({
+        ...prev,
+        [permissionType]: {
+          granted: false,
+          checking: false
+        }
+      }));
     }
   };
 
   // Yêu cầu tất cả quyền
   const requestAllPermissions = async () => {
+    console.log('🔍 Requesting all permissions...');
     for (const permission of permissionList) {
       if (!permissions[permission.key]?.granted) {
         await requestPermission(permission.key);
+        // Add small delay between requests
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
     }
   };
@@ -206,9 +226,8 @@ const PermissionRequestModal = ({ visible, onAllPermissionsGranted }) => {
   };
 
   useEffect(() => {
-    if (visible) {
-      checkPermissions();
-    }
+    // Remove auto-check when modal becomes visible
+    // Permissions start as not granted and user must manually grant them
   }, [visible]);
 
   const renderPermissionItem = (permission) => {
@@ -218,12 +237,19 @@ const PermissionRequestModal = ({ visible, onAllPermissionsGranted }) => {
 
     return (
       <View key={permission.key} style={styles.permissionItem}>
-        <View style={styles.permissionIcon}>
-          <Ionicons 
-            name={permission.icon} 
-            size={24} 
-            color={isGranted ? '#4CAF50' : '#757575'} 
-          />
+        <View style={styles.permissionIconContainer}>
+          <LinearGradient
+            colors={isGranted ? ['#4CAF50', '#45A049'] : ['#333', '#555']} // Gray when not granted
+            style={styles.permissionIcon}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <Ionicons 
+              name={permission.icon} 
+              size={24} 
+              color={isGranted ? "#fff" : "#888"} // White when granted, gray when not
+            />
+          </LinearGradient>
         </View>
         
         <View style={styles.permissionContent}>
@@ -232,20 +258,24 @@ const PermissionRequestModal = ({ visible, onAllPermissionsGranted }) => {
         </View>
 
         <TouchableOpacity
-          style={[
-            styles.permissionButton,
-            isGranted ? styles.grantedButton : styles.pendingButton
-          ]}
+          style={styles.permissionButton}
           onPress={() => requestPermission(permission.key)}
           disabled={isChecking || isGranted}
         >
-          {isChecking ? (
-            <Text style={styles.buttonText}>Checking...</Text>
-          ) : isGranted ? (
-            <Ionicons name="checkmark" size={16} color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Grant</Text>
-          )}
+          <LinearGradient
+            colors={isGranted ? ['#4CAF50', '#45A049'] : ['#333', '#555']} // Gray gradient when not granted
+            style={styles.buttonGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            {isChecking ? (
+              <Text style={[styles.buttonText, { color: '#fff' }]}>Checking...</Text>
+            ) : isGranted ? (
+              <Ionicons name="checkmark" size={16} color="#fff" />
+            ) : (
+              <Text style={[styles.buttonText, { color: '#888' }]}>Grant</Text>
+            )}
+          </LinearGradient>
         </TouchableOpacity>
       </View>
     );
@@ -262,24 +292,44 @@ const PermissionRequestModal = ({ visible, onAllPermissionsGranted }) => {
     >
       <View style={styles.container}>
         <View style={styles.header}>
-          <Ionicons name="shield-checkmark-outline" size={48} color="#8BA888" />
+          <LinearGradient
+            colors={['#FFD700', '#B8860B', '#DAA520']}
+            style={styles.logoCircle}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <Ionicons name="shield-checkmark-outline" size={48} color="#000" />
+          </LinearGradient>
           <Text style={styles.title}>Grant Permissions</Text>
           <Text style={styles.subtitle}>
             The app needs some permissions to work properly
           </Text>
         </View>
 
-        <ScrollView style={styles.permissionsList} showsVerticalScrollIndicator={false}>
-          {permissionList.map(renderPermissionItem)}
+        <ScrollView 
+          style={styles.permissionsList} 
+          contentContainerStyle={styles.permissionsListContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.permissionsContainer}>
+            {permissionList.map(renderPermissionItem)}
+          </View>
         </ScrollView>
 
         <View style={styles.footer}>
           <TouchableOpacity
-            style={styles.requestAllButton}
+            style={styles.requestAllButtonWrapper}
             onPress={requestAllPermissions}
             disabled={!allChecked}
           >
-            <Text style={styles.requestAllButtonText}>Grant All Permissions</Text>
+            <LinearGradient
+              colors={['#FFD700', '#B8860B', '#DAA520']}
+              style={styles.requestAllButton}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Text style={styles.requestAllButtonText}>Grant All Permissions</Text>
+            </LinearGradient>
           </TouchableOpacity>
 
           <View style={styles.actionButtons}>
@@ -291,18 +341,22 @@ const PermissionRequestModal = ({ visible, onAllPermissionsGranted }) => {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[
-                styles.continueButton,
-                allPermissionsGranted() ? styles.continueButtonEnabled : styles.continueButtonDisabled
-              ]}
+              style={styles.continueButtonWrapper}
               onPress={handleContinue}
             >
-              <Text style={[
-                styles.continueButtonText,
-                allPermissionsGranted() ? styles.continueButtonTextEnabled : styles.continueButtonTextDisabled
-              ]}>
-                Continue
-              </Text>
+              <LinearGradient
+                colors={allPermissionsGranted() ? ['#FFD700', '#B8860B', '#DAA520'] : ['#333', '#555']}
+                style={styles.continueButton}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Text style={[
+                  styles.continueButtonText,
+                  allPermissionsGranted() ? styles.continueButtonTextEnabled : styles.continueButtonTextDisabled
+                ]}>
+                  Continue
+                </Text>
+              </LinearGradient>
             </TouchableOpacity>
           </View>
         </View>
@@ -314,7 +368,7 @@ const PermissionRequestModal = ({ visible, onAllPermissionsGranted }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAF8F5',
+    backgroundColor: '#000000', // Black background like login
     paddingTop: Platform.OS === 'ios' ? 50 : 30,
   },
   header: {
@@ -322,16 +376,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 30,
   },
+  logoCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    color: '#2C3E50',
+    color: '#FFD700', // Gold color like login
     marginTop: 16,
     textAlign: 'center',
+    textShadowColor: '#B8860B',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   subtitle: {
     fontSize: 16,
-    color: '#7F8C8D',
+    color: '#888', // Gray text like login
     textAlign: 'center',
     marginTop: 8,
     lineHeight: 22,
@@ -340,60 +405,69 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
   },
+  permissionsListContent: {
+    alignItems: 'center',
+  },
+  permissionsContainer: {
+    width: '85%',
+    maxWidth: 305,
+    borderWidth: 1,
+    borderColor: '#FFD700', // Gold border like login form
+    borderRadius: 15,
+    padding: 20,
+    backgroundColor: 'transparent',
+  },
   permissionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 16,
+    paddingVertical: 16,
     marginBottom: 12,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+  },
+  permissionIconContainer: {
+    marginRight: 16,
   },
   permissionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F8F9FA',
-    justifyContent: 'center',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     alignItems: 'center',
-    marginRight: 12,
+    justifyContent: 'center',
   },
   permissionContent: {
     flex: 1,
+    marginRight: 12,
   },
   permissionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#2C3E50',
+    color: '#ffffff', // White text
     marginBottom: 4,
   },
   permissionDescription: {
-    fontSize: 14,
-    color: '#7F8C8D',
+    fontSize: 13,
+    color: '#888', // Gray text
     lineHeight: 18,
   },
   permissionButton: {
-    paddingHorizontal: 16,
+    borderRadius: 20,
+    minWidth: 70,
+    alignItems: 'center',
+  },
+  buttonGradient: {
+    paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
-    minWidth: 80,
+    minWidth: 70,
     alignItems: 'center',
   },
   grantedButton: {
-    backgroundColor: '#4CAF50',
+    // Removed - using gradient instead
   },
   pendingButton: {
-    backgroundColor: '#8BA888',
+    // Removed - using gradient instead
   },
   buttonText: {
-    color: '#fff',
+    color: '#000', // Black text on gold gradient
     fontSize: 12,
     fontWeight: '600',
   },
@@ -401,15 +475,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 30,
   },
+  requestAllButtonWrapper: {
+    borderRadius: 25,
+    marginBottom: 16,
+    shadowColor: '#FFD700',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
   requestAllButton: {
-    backgroundColor: '#8BA888',
     paddingVertical: 14,
     borderRadius: 25,
     alignItems: 'center',
-    marginBottom: 16,
   },
   requestAllButtonText: {
-    color: '#fff',
+    color: '#000', // Black text on gold gradient
     fontSize: 16,
     fontWeight: '600',
   },
@@ -424,32 +508,30 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   skipButtonText: {
-    color: '#7F8C8D',
+    color: '#888', // Gray text like login
     fontSize: 16,
     fontWeight: '500',
+    textDecorationLine: 'underline',
+  },
+  continueButtonWrapper: {
+    flex: 1,
+    borderRadius: 25,
+    marginLeft: 8,
   },
   continueButton: {
-    flex: 1,
     paddingVertical: 14,
     borderRadius: 25,
     alignItems: 'center',
-    marginLeft: 8,
-  },
-  continueButtonEnabled: {
-    backgroundColor: '#27AE60',
-  },
-  continueButtonDisabled: {
-    backgroundColor: '#BDC3C7',
   },
   continueButtonText: {
     fontSize: 16,
     fontWeight: '600',
   },
   continueButtonTextEnabled: {
-    color: '#fff',
+    color: '#000', // Black text on gold gradient
   },
   continueButtonTextDisabled: {
-    color: '#7F8C8D',
+    color: '#888', // Gray text on dark gradient
   },
 });
 

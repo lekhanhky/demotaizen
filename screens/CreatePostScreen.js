@@ -32,7 +32,7 @@ export default function CreatePostScreen({ navigation, onPostCreated }) {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     
     if (status !== 'granted') {
-      Alert.alert('Lỗi', 'Cần quyền truy cập thư viện ảnh');
+      Alert.alert('Error', 'Need permission to access photo library');
       return;
     }
 
@@ -83,7 +83,7 @@ export default function CreatePostScreen({ navigation, onPostCreated }) {
 
   const handlePost = async () => {
     if (!content.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng nhập nội dung bài đăng');
+      Alert.alert('Error', 'Please enter post content');
       return;
     }
 
@@ -110,14 +110,14 @@ export default function CreatePostScreen({ navigation, onPostCreated }) {
 
       if (error) throw error;
 
-      Alert.alert('Thành công', 'Đã đăng bài thành công!');
+      Alert.alert('Success', 'Post created successfully!');
       setContent('');
       setMedia(null);
       setUploadProgress(0);
       if (onPostCreated) onPostCreated();
       if (navigation) navigation.goBack();
     } catch (error) {
-      Alert.alert('Lỗi', error.message);
+      Alert.alert('Error', error.message);
     } finally {
       setLoading(false);
     }
@@ -150,7 +150,7 @@ export default function CreatePostScreen({ navigation, onPostCreated }) {
             {loading ? (
               <ActivityIndicator color="#fff" size="small" />
             ) : (
-              <Text style={styles.postButtonText}>Đăng</Text>
+              <Text style={styles.postButtonText}>Post</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -158,7 +158,7 @@ export default function CreatePostScreen({ navigation, onPostCreated }) {
         <ScrollView style={styles.content}>
           <TextInput
             style={styles.input}
-            placeholder="Bạn đang nghĩ gì?"
+            placeholder="What's happening?"
             placeholderTextColor={theme.placeholderText}
             value={content}
             onChangeText={setContent}
@@ -194,7 +194,7 @@ export default function CreatePostScreen({ navigation, onPostCreated }) {
           <View style={styles.footer}>
             <TouchableOpacity style={styles.mediaButton} onPress={pickMedia}>
               <Ionicons name="image-outline" size={20} color={theme.primary} style={{ marginRight: 8 }} />
-              <Text style={styles.mediaButtonText}>Ảnh/Video</Text>
+              <Text style={styles.mediaButtonText}>Photo/Video</Text>
             </TouchableOpacity>
             
             <Text style={styles.charCount}>

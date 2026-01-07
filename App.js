@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ensureUserProfile } from './utils/profileHelper';
+import { loadPermissionsGranted, savePermissionsGranted } from './utils/permissionStorage';
 import { startAlertMonitoring, stopAlertMonitoring } from './services/alertMonitorService';
 import { registerBackgroundAlertTask } from './services/backgroundAlertService';
 import NewLoginScreen from './screens/NewLoginScreen';
@@ -19,7 +20,24 @@ function AppContent() {
   const { user } = useAuth();
   const [showPermissionModal, setShowPermissionModal] = useState(false);
   const [permissionsGranted, setPermissionsGranted] = useState(false);
+  const [permissionsLoaded, setPermissionsLoaded] = useState(false);
   const [fullScreenAlert, setFullScreenAlert] = useState(null);
+
+  // Load permissions state from AsyncStorage
+  useEffect(() => {
+    const loadPermissionsState = async () => {
+      try {
+        const granted = await loadPermissionsGranted();
+        setPermissionsGranted(granted);
+      } catch (error) {
+        console.error('Error loading permissions state:', error);
+      } finally {
+        setPermissionsLoaded(true);
+      }
+    };
+
+    loadPermissionsState();
+  }, []);
 
   // Setup global alert callback
   useEffect(() => {
@@ -34,23 +52,27 @@ function AppContent() {
     console.log('🔍 Debug - App state changed:', { 
       hasUser: !!user, 
       permissionsGranted, 
+      permissionsLoaded,
       showPermissionModal 
     });
-  }, [user, permissionsGranted, showPermissionModal]);
+  }, [user, permissionsGranted, permissionsLoaded, showPermissionModal]);
 
   // Hiển thị modal quyền khi user đăng nhập lần đầu
   useEffect(() => {
-    console.log('🔍 Debug - User effect triggered:', { hasUser: !!user, permissionsGranted });
+    console.log('🔍 Debug - User effect triggered:', { 
+      hasUser: !!user, 
+      permissionsGranted, 
+      permissionsLoaded 
+    });
     
-    if (user && !permissionsGranted) {
+    if (user && permissionsLoaded && !permissionsGranted) {
       console.log('� Debug - Saetting showPermissionModal to true');
       setShowPermissionModal(true);
     } else if (!user) {
-      // Reset states khi logout
+      // Reset states khi logout (nhưng không xóa AsyncStorage)
       setShowPermissionModal(false);
-      setPermissionsGranted(false);
     }
-  }, [user, permissionsGranted]);
+  }, [user, permissionsGranted, permissionsLoaded]);
 
   // Setup monitoring khi user thay đổi và đã có quyền
   useEffect(() => {
@@ -80,23 +102,39 @@ function AppContent() {
     await supabase.auth.signOut();
   };
 
-  const handlePermissionsGranted = () => {
+  const handlePermissionsGranted = async () => {
     console.log('🔍 Debug - Permissions granted, hiding modal');
-    setShowPermissionModal(false);
-    setPermissionsGranted(true);
+    
+    // Save to AsyncStorage
+    const saved = await savePermissionsGranted();
+    if (saved) {
+      setShowPermissionModal(false);
+      setPermissionsGranted(true);
+    }
   };
 
   // Debug current state
   console.log('🔍 Debug - Current render state:', { 
     hasUser: !!user, 
     permissionsGranted, 
+    permissionsLoaded,
     showPermissionModal,
-    willShowModal: user && !permissionsGranted
+    willShowModal: user && permissionsLoaded && !permissionsGranted
   });
 
   if (!user) {
     console.log('🔍 Debug - Showing NewLoginScreen');
     return <NewLoginScreen />;
+  }
+
+  // Show loading while permissions are being loaded
+  if (!permissionsLoaded) {
+    console.log('🔍 Debug - Loading permissions state');
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#FFD700" />
+      </View>
+    );
   }
 
   // Hiển thị HomeScreen nếu đã có quyền
@@ -147,7 +185,7 @@ export default function App() {
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#FAF8F5',
+    backgroundColor: '#000000', // Black background like login
     justifyContent: 'center',
     alignItems: 'center',
   },

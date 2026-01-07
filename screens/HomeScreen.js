@@ -868,7 +868,7 @@ export default function HomeScreen({ onLogout }) {
       >
         <TouchableOpacity style={styles.navItem}>
           <Ionicons name="home" size={24} color={theme.primary} />
-          <Text style={styles.navTextActive}>Trang chủ</Text>
+          <Text style={styles.navTextActive}>Home</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
@@ -893,7 +893,7 @@ export default function HomeScreen({ onLogout }) {
               </View>
             )}
           </View>
-          <Text style={styles.navText}>Tin nhắn</Text>
+          <Text style={styles.navText}>Messages</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
@@ -910,7 +910,7 @@ export default function HomeScreen({ onLogout }) {
               </View>
             )}
           </View>
-          <Text style={styles.navText}>Thông báo</Text>
+          <Text style={styles.navText}>Notifications</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
@@ -926,7 +926,7 @@ export default function HomeScreen({ onLogout }) {
             <Ionicons name="person-outline" size={24} color={theme.iconColor} style={{ opacity: 0.6 }} />
           )}
           <Text style={styles.navText}>
-            {userProfile?.display_name || 'Hồ sơ'}
+            {userProfile?.display_name || 'Profile'}
           </Text>
         </TouchableOpacity>
       </View>
