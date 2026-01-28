@@ -1,6 +1,7 @@
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Notifications from 'expo-notifications';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -29,7 +30,14 @@ export default function PermissionScreen({ onPermissionGranted }) {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.content}>
         <View style={styles.iconContainer}>
-          <Ionicons name="notifications" size={120} color={theme.primary} />
+          <LinearGradient
+            colors={['#F2D582AD', '#FFE5A3AD', '#F2D582AD', '#E6C76BAD']} // Metallic gold gradient with 68% opacity
+            style={styles.iconCircle}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+          >
+            <Ionicons name="notifications" size={80} color="#000" />
+          </LinearGradient>
         </View>
 
         <Text style={[styles.title, { color: theme.text }]}>
@@ -42,21 +50,42 @@ export default function PermissionScreen({ onPermissionGranted }) {
 
         <View style={styles.featuresList}>
           <View style={styles.featureItem}>
-            <Ionicons name="checkmark-circle" size={24} color="#28a745" />
+            <LinearGradient
+              colors={['#28a745', '#32d74b', '#28a745']} // Green gradient for checkmarks
+              style={styles.checkmarkCircle}
+              start={{ x: 0, y: 0.5 }}
+              end={{ x: 1, y: 0.5 }}
+            >
+              <Ionicons name="checkmark" size={16} color="#fff" />
+            </LinearGradient>
             <Text style={[styles.featureText, { color: theme.text }]}>
               Nhận cảnh báo realtime
             </Text>
           </View>
 
           <View style={styles.featureItem}>
-            <Ionicons name="checkmark-circle" size={24} color="#28a745" />
+            <LinearGradient
+              colors={['#28a745', '#32d74b', '#28a745']} // Green gradient for checkmarks
+              style={styles.checkmarkCircle}
+              start={{ x: 0, y: 0.5 }}
+              end={{ x: 1, y: 0.5 }}
+            >
+              <Ionicons name="checkmark" size={16} color="#fff" />
+            </LinearGradient>
             <Text style={[styles.featureText, { color: theme.text }]}>
               Rung + âm thanh cảnh báo
             </Text>
           </View>
 
           <View style={styles.featureItem}>
-            <Ionicons name="checkmark-circle" size={24} color="#28a745" />
+            <LinearGradient
+              colors={['#28a745', '#32d74b', '#28a745']} // Green gradient for checkmarks
+              style={styles.checkmarkCircle}
+              start={{ x: 0, y: 0.5 }}
+              end={{ x: 1, y: 0.5 }}
+            >
+              <Ionicons name="checkmark" size={16} color="#fff" />
+            </LinearGradient>
             <Text style={[styles.featureText, { color: theme.text }]}>
               Theo dõi ngay cả khi app đóng
             </Text>
@@ -64,10 +93,17 @@ export default function PermissionScreen({ onPermissionGranted }) {
         </View>
 
         <TouchableOpacity 
-          style={[styles.allowButton, { backgroundColor: theme.primary }]}
+          style={styles.allowButtonWrapper}
           onPress={requestPermission}
         >
-          <Text style={styles.allowButtonText}>Cho phép thông báo</Text>
+          <LinearGradient
+            colors={['#F2D582AD', '#FFE5A3AD', '#F2D582AD', '#E6C76BAD']} // Metallic gold gradient with 68% opacity
+            style={styles.allowButton}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+          >
+            <Text style={styles.allowButtonText}>Cho phép thông báo</Text>
+          </LinearGradient>
         </TouchableOpacity>
 
         <TouchableOpacity 
@@ -96,6 +132,15 @@ const createStyles = (theme) => StyleSheet.create({
   iconContainer: {
     marginBottom: 32,
   },
+  iconCircle: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: '#F2D582AD',
+  },
   title: {
     fontSize: 28,
     fontWeight: '700',
@@ -117,19 +162,38 @@ const createStyles = (theme) => StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
+  checkmarkCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   featureText: {
     fontSize: 16,
     marginLeft: 12,
+  },
+  allowButtonWrapper: {
+    width: '100%',
+    borderRadius: 12,
+    marginBottom: 12,
+    shadowColor: '#F2D582AD',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   allowButton: {
     width: '100%',
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
-    marginBottom: 12,
   },
   allowButtonText: {
-    color: '#fff',
+    color: '#000',
     fontSize: 18,
     fontWeight: '600',
   },

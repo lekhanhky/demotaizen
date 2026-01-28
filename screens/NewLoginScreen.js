@@ -49,10 +49,10 @@ export default function NewLoginScreen() {
       <View style={styles.content}>
         <View style={styles.logoContainer}>
           <LinearGradient
-            colors={['#FFD700', '#B8860B', '#DAA520']} // Gold gradient from light to dark
+            colors={['#F2D582', '#FFE5A3', '#F2D582', '#E6C76B']} // Metallic gold gradient
             style={styles.logoCircle}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
           >
             <Image 
               source={require('../assets/splash-icon.png')} 
@@ -75,10 +75,10 @@ export default function NewLoginScreen() {
             disabled={isLoggingIn || loading}
           >
             <LinearGradient
-              colors={['#FFD700', '#B8860B', '#DAA520']} // Gold gradient
+              colors={['#F2D582', '#FFE5A3', '#F2D582', '#E6C76B']} // Metallic gold gradient
               style={styles.quickLoginButton}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
+              start={{ x: 0, y: 0.5 }}
+              end={{ x: 1, y: 0.5 }}
             >
               <Ionicons name="person" size={16} color="#000" />
               <Text style={styles.quickLoginText}>Admin</Text>
@@ -94,10 +94,10 @@ export default function NewLoginScreen() {
             disabled={isLoggingIn || loading}
           >
             <LinearGradient
-              colors={['#FFD700', '#B8860B', '#DAA520']} // Gold gradient
+              colors={['#F2D582', '#FFE5A3', '#F2D582', '#E6C76B']} // Metallic gold gradient
               style={styles.quickLoginButton}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
+              start={{ x: 0, y: 0.5 }}
+              end={{ x: 1, y: 0.5 }}
             >
               <Ionicons name="person" size={16} color="#000" />
               <Text style={styles.quickLoginText}>User</Text>
@@ -145,10 +145,10 @@ export default function NewLoginScreen() {
             disabled={isLoggingIn || loading}
           >
             <LinearGradient
-              colors={['#FFD700', '#B8860B', '#DAA520']} // Gold gradient
+              colors={['#F2D582', '#FFE5A3', '#F2D582', '#E6C76B']} // Metallic gold gradient
               style={[styles.loginButton, (isLoggingIn || loading) && styles.loginButtonDisabled]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
+              start={{ x: 0, y: 0.5 }}
+              end={{ x: 1, y: 0.5 }}
             >
               {isLoggingIn || loading ? (
                 <View style={styles.loadingContainer}>
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: 60,
     borderWidth: 3,
-    borderColor: '#FFD700', // Light gold border
+    borderColor: '#F2D582', // Metallic gold border
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
@@ -208,11 +208,11 @@ const styles = StyleSheet.create({
   },
   logo: {
     fontSize: 48,
-    color: '#FFD700', // Light gold color
+    color: '#F2D582', // Metallic gold color
     fontWeight: 'bold',
     letterSpacing: 2,
     textAlign: 'center',
-    textShadowColor: '#B8860B',
+    textShadowColor: '#FFE5A3',
     textShadowOffset: { width: 2, height: 2 },
     textShadowRadius: 4,
   },
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     width: '85%',
     maxWidth: 305,
     borderWidth: 1,
-    borderColor: '#FFD700', // Light gold border
+    borderColor: '#F2D582', // Metallic gold border
     borderRadius: 15,
     padding: 20,
     backgroundColor: 'transparent',
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     width: '100%',
     borderRadius: 12,
-    shadowColor: '#FFD700',
+    shadowColor: '#F3E753',
     shadowOffset: {
       width: 0,
       height: 4,
