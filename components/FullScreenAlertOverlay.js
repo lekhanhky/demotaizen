@@ -8,11 +8,52 @@ import { Audio } from 'expo-av';
 export default function FullScreenAlertOverlay({ visible, monitor, onDismiss }) {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
+  const soundRef = useRef(null);
+  const vibrateIntervalRef = useRef(null);
+  const pulseAnimationRef = useRef(null);
+  const shakeAnimationRef = useRef(null);
+
+  // Hàm cleanup để dừng tất cả
+  const cleanup = async () => {
+    // Dừng rung
+    if (vibrateIntervalRef.current) {
+      clearInterval(vibrateIntervalRef.current);
+      vibrateIntervalRef.current = null;
+    }
+
+    // Dừng animations
+    if (pulseAnimationRef.current) {
+      pulseAnimationRef.current.stop();
+      pulseAnimationRef.current = null;
+    }
+    if (shakeAnimationRef.current) {
+      shakeAnimationRef.current.stop();
+      shakeAnimationRef.current = null;
+    }
+
+    // Dừng âm thanh
+    if (soundRef.current) {
+      try {
+        await soundRef.current.stopAsync();
+        await soundRef.current.unloadAsync();
+        soundRef.current = null;
+      } catch (error) {
+        console.error('Error stopping sound:', error);
+      }
+    }
+  };
+
+  // Hàm xử lý dismiss
+  const handleDismiss = async () => {
+    await cleanup();
+    onDismiss();
+  };
 
   useEffect(() => {
-    if (!visible) return;
-
-    let sound = null;
+    if (!visible) {
+      cleanup();
+      return;
+    }
 
     // Phát âm thanh cảnh báo liên tục
     const playAlertSound = async () => {
@@ -27,7 +68,7 @@ export default function FullScreenAlertOverlay({ visible, monitor, onDismiss }) 
           { uri: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3' },
           { shouldPlay: true, isLooping: true, volume: 1.0 }
         );
-        sound = alertSound;
+        soundRef.current = alertSound;
       } catch (error) {
         console.error('Error playing alert sound:', error);
       }
@@ -36,7 +77,7 @@ export default function FullScreenAlertOverlay({ visible, monitor, onDismiss }) 
     playAlertSound();
 
     // Rung liên tục
-    const vibrateInterval = setInterval(() => {
+    vibrateIntervalRef.current = setInterval(() => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }, 1000);
 
@@ -56,6 +97,7 @@ export default function FullScreenAlertOverlay({ visible, monitor, onDismiss }) 
       ])
     );
     pulseAnimation.start();
+    pulseAnimationRef.current = pulseAnimation;
 
     // Animation shake
     const shakeAnimation = Animated.loop(
@@ -68,16 +110,10 @@ export default function FullScreenAlertOverlay({ visible, monitor, onDismiss }) 
       ])
     );
     shakeAnimation.start();
+    shakeAnimationRef.current = shakeAnimation;
 
     return () => {
-      clearInterval(vibrateInterval);
-      pulseAnimation.stop();
-      shakeAnimation.stop();
-      // Dừng âm thanh khi đóng
-      if (sound) {
-        sound.stopAsync();
-        sound.unloadAsync();
-      }
+      cleanup();
     };
   }, [visible]);
 
@@ -114,7 +150,7 @@ export default function FullScreenAlertOverlay({ visible, monitor, onDismiss }) 
 
           <Text style={styles.time}>{new Date().toLocaleTimeString('en-US')}</Text>
 
-          <TouchableOpacity style={styles.dismissButton} onPress={onDismiss}>
+          <TouchableOpacity style={styles.dismissButton} onPress={handleDismiss}>
             <Ionicons name="close-circle" size={32} color="#fff" />
             <Text style={styles.buttonText}>Got it</Text>
           </TouchableOpacity>
